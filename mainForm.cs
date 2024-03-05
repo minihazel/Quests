@@ -8,7 +8,7 @@ namespace Quests
 {
     public partial class mainForm : Form
     {
-        public string? currentEnv = null;
+        public string? currentEnv = Environment.CurrentDirectory;
         public string? userFolder = null;
         public string? profilesFolder = null;
 
