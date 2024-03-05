@@ -1,0 +1,111 @@
+﻿namespace Quests
+{
+    partial class mainForm
+    {
+        /// <summary>
+        ///  Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary>
+        ///  Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Windows Form Designer generated code
+
+        /// <summary>
+        ///  Required method for Designer support - do not modify
+        ///  the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(mainForm));
+            panelQuests = new Panel();
+            panelProfiles = new Panel();
+            profilesPlaceholder = new Label();
+            lblQuestInfo = new Label();
+            panelProfiles.SuspendLayout();
+            SuspendLayout();
+            // 
+            // panelQuests
+            // 
+            panelQuests.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            panelQuests.AutoScroll = true;
+            panelQuests.Location = new Point(0, 0);
+            panelQuests.Name = "panelQuests";
+            panelQuests.Size = new Size(584, 503);
+            panelQuests.TabIndex = 0;
+            // 
+            // panelProfiles
+            // 
+            panelProfiles.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            panelProfiles.AutoScroll = true;
+            panelProfiles.Controls.Add(profilesPlaceholder);
+            panelProfiles.Location = new Point(0, 0);
+            panelProfiles.Name = "panelProfiles";
+            panelProfiles.Size = new Size(584, 503);
+            panelProfiles.TabIndex = 1;
+            // 
+            // profilesPlaceholder
+            // 
+            profilesPlaceholder.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            profilesPlaceholder.Font = new Font("Bender", 13F);
+            profilesPlaceholder.Location = new Point(0, 1);
+            profilesPlaceholder.Name = "profilesPlaceholder";
+            profilesPlaceholder.Padding = new Padding(10, 0, 0, 0);
+            profilesPlaceholder.Size = new Size(580, 45);
+            profilesPlaceholder.TabIndex = 0;
+            profilesPlaceholder.Text = "✔️ Profile placeholder";
+            profilesPlaceholder.TextAlign = ContentAlignment.MiddleLeft;
+            profilesPlaceholder.Visible = false;
+            // 
+            // lblQuestInfo
+            // 
+            lblQuestInfo.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            lblQuestInfo.BorderStyle = BorderStyle.FixedSingle;
+            lblQuestInfo.Font = new Font("Bender", 10F);
+            lblQuestInfo.Location = new Point(-1, 506);
+            lblQuestInfo.Name = "lblQuestInfo";
+            lblQuestInfo.Padding = new Padding(10);
+            lblQuestInfo.Size = new Size(586, 172);
+            lblQuestInfo.TabIndex = 2;
+            // 
+            // mainForm
+            // 
+            AutoScaleDimensions = new SizeF(9F, 18F);
+            AutoScaleMode = AutoScaleMode.Font;
+            BackColor = Color.FromArgb(26, 28, 30);
+            ClientSize = new Size(584, 677);
+            Controls.Add(lblQuestInfo);
+            Controls.Add(panelProfiles);
+            Controls.Add(panelQuests);
+            Font = new Font("Bender", 12F, FontStyle.Bold);
+            ForeColor = Color.LightGray;
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            KeyPreview = true;
+            Name = "mainForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "Quests";
+            Load += mainForm_Load;
+            KeyDown += mainForm_KeyDown;
+            panelProfiles.ResumeLayout(false);
+            ResumeLayout(false);
+        }
+
+        #endregion
+
+        private Panel panelQuests;
+        private Panel panelProfiles;
+        private Label profilesPlaceholder;
+        private Label lblQuestInfo;
+    }
+}
