@@ -8,12 +8,12 @@ namespace Quests
 {
     public partial class mainForm : Form
     {
-        public string currentEnv = null;
-        public string userFolder = null;
-        public string profilesFolder = null;
+        public string? currentEnv = null;
+        public string? userFolder = null;
+        public string? profilesFolder = null;
 
-        public string profilePath = null;
-        public string currentProfile = null;
+        public string? profilePath = null;
+        public string? currentProfile = null;
         public string[] fetchedQuests;
         public string[] fetchedTraders;
 
@@ -31,16 +31,45 @@ namespace Quests
 
         private void mainForm_Load(object sender, EventArgs e)
         {
-            string parentDirectory = Path.GetFileName(Environment.CurrentDirectory).ToLower();
-            if (parentDirectory == "net8.0-windows")
-                currentEnv = "D:\\SPT Iterations\\SPT-AKI 3.7.6";
+            bool isDirectorySPT = checkSPTFiles();
+            if (!isDirectorySPT)
+            {
+                string pathFile = Path.Combine(currentEnv, "path.txt");
+                bool pathFileExists = File.Exists(pathFile);
+                if (pathFileExists)
+                {
+                    currentEnv = File.ReadAllText(pathFile);
+                    userFolder = Path.Combine(currentEnv, "user");
+                    profilesFolder = Path.Combine(userFolder, "profiles");
+                }
+            }
             else
                 currentEnv = Environment.CurrentDirectory;
+
+            startFetching();
+        }
+
+        private bool checkSPTFiles()
+        {
+            string akiServer = Path.Combine(currentEnv, "Aki.Server.exe");
+            string akiLauncher = Path.Combine(currentEnv, "Aki.Launcher.exe");
+            string EFT = Path.Combine(currentEnv, "EscapeFromTarkov.exe");
 
             userFolder = Path.Combine(currentEnv, "user");
             profilesFolder = Path.Combine(userFolder, "profiles");
 
-            startFetching();
+            bool akiServerExists = File.Exists(akiServer);
+            bool akiLauncherExists = File.Exists(akiLauncher);
+            bool EFTExists = File.Exists(EFT);
+            bool userFolderExists = File.Exists(userFolder);
+            bool profilesFolderExists = File.Exists(profilesFolder);
+
+            if (akiServerExists && akiLauncherExists && EFTExists && userFolderExists &&  profilesFolderExists)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private void startFetching()
@@ -440,7 +469,7 @@ namespace Quests
             }
         }
 
-        private async void activequest_MouseDown(object sender, MouseEventArgs e)
+        private void activequest_MouseDown(object sender, MouseEventArgs e)
         {
             System.Windows.Forms.Label label = (System.Windows.Forms.Label)sender;
             if (label.Text != "")
