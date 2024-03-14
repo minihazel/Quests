@@ -86,12 +86,40 @@ namespace Quests
                 panelProfiles.BringToFront();
                 lblQuestInfo.Text = null;
 
-                fetchProfiles();
+                listProfiles();
                 Text = $"Quests (active installation: {currentEnv})";
             }
         }
 
-        private void fetchProfiles()
+        private void switchDevMode()
+        {
+            string name = null;
+
+            foreach (Control c in panelQuests.Controls)
+            {
+                if (c is Label lbl)
+                {
+                    if (lbl.Text.ToLower().Contains("developer mode"))
+                    {
+                        name = lbl.Name;
+                    }
+
+
+                    if (lbl.Text.ToLower() == "◻️ developer mode" && lbl.Name == name)
+                    {
+                        lbl.Text = "◼️ Developer Mode";
+                        break;
+                    }
+                    else if (lbl.Text.ToLower() == "◼️ developer mode" && lbl.Name == name)
+                    {
+                        lbl.Text = "◻️ Developer Mode";
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void listProfiles()
         {
             string[] profiles = Directory.GetFiles(profilesFolder, "*.json");
             for (int i = 0; i < profiles.Length; i++)
@@ -117,7 +145,8 @@ namespace Quests
                 if (convertedProfile != null || convertedProfile != "")
                 {
                     string aid = Path.GetFileNameWithoutExtension(profiles[i]);
-                    lbl.Text = $"✔️ {convertedProfile}";
+                    string profileStats = displayProfileData(profiles[i]);
+                    lbl.Text = $"✔️ {convertedProfile} {profileStats}";
                     lbl.Tag = aid;
                 }
                 else
@@ -199,6 +228,43 @@ namespace Quests
                             if (infoAID == cleanAID)
                             {
                                 return Nickname;
+                            }
+                        }
+                    }
+                }
+            }
+            return "Incomplete profile";
+        }
+
+        private string displayProfileData(string AID)
+        {
+            string cleanAID = Path.GetFileNameWithoutExtension(AID);
+            string fullAID = Path.Combine(profilesFolder, $"{cleanAID}.json");
+
+            bool fullAIDExists = File.Exists(fullAID);
+            if (fullAIDExists)
+            {
+                string fileContent = File.ReadAllText(fullAID);
+                JObject parsedFile = JObject.Parse(fileContent);
+                JObject characters = (JObject)parsedFile["characters"];
+                JObject info = (JObject)parsedFile["info"];
+
+                if (characters.Type != JTokenType.Null)
+                {
+                    JObject pmc = (JObject)characters["pmc"];
+
+                    if (pmc.Type != JTokenType.Null)
+                    {
+                        JObject Info = (JObject)pmc["Info"];
+                        if (Info != null)
+                        {
+                            string Side = (string)Info["Side"];
+                            int Level = (int)Info["Level"];
+                            string infoAID = (string)info["id"];
+
+                            if (infoAID == cleanAID)
+                            {
+                                return $" ({Side.ToUpper()} lvl {Level.ToString()})";
                             }
                         }
                     }
@@ -290,40 +356,61 @@ namespace Quests
                 lbl.TextAlign = ContentAlignment.MiddleLeft;
                 lbl.Size = new Size(panelQuests.Size.Width, profilesPlaceholder.Size.Height);
                 lbl.Location = new Point(175, profilesPlaceholder.Location.X + (i * profilesPlaceholder.Size.Height));
-                lbl.Cursor = Cursors.Hand;
                 lbl.BackColor = listBackcolor;
                 lbl.ForeColor = Color.LightGray;
                 lbl.Font = new Font("Bender", 13, FontStyle.Regular);
                 lbl.Text = fetchedQuests[i];
                 lbl.Margin = new Padding(10, 1, 1, 1);
-                lbl.MouseEnter += new EventHandler(activequest_MouseEnter);
-                lbl.MouseLeave += new EventHandler(activequest_MouseLeave);
-                lbl.MouseDown += new MouseEventHandler(activequest_MouseDown);
-                lbl.MouseUp += new MouseEventHandler(activequest_MouseUp);
-                lbl.MouseDoubleClick += new MouseEventHandler(activequest_MouseDoubleClick);
+                if (fetchedQuests != null)
+                {
+                    lbl.MouseEnter += new EventHandler(activequest_MouseEnter);
+                    lbl.MouseLeave += new EventHandler(activequest_MouseLeave);
+                    lbl.MouseDown += new MouseEventHandler(activequest_MouseDown);
+                    lbl.MouseUp += new MouseEventHandler(activequest_MouseUp);
+                    lbl.MouseDoubleClick += new MouseEventHandler(activequest_MouseDoubleClick);
+                    lbl.Cursor = Cursors.Hand;
+                }
+                else
+                {
+                    lbl.Cursor = Cursors.Default;
+                }
+
                 panelQuests.Controls.Add(lbl);
             }
 
             for (int i = 0; i < fetchedTraders.Length; i++)
             {
                 Label lbl = new Label();
-                lbl.Name = $"TraderItem{i}";
-                lbl.AutoSize = false;
-                lbl.Anchor = (AnchorStyles.Left | AnchorStyles.Top);
-                lbl.TextAlign = ContentAlignment.MiddleLeft;
-                lbl.Size = new Size(175, profilesPlaceholder.Size.Height);
-                lbl.Location = new Point(0, profilesPlaceholder.Location.X + (i * profilesPlaceholder.Size.Height));
-                lbl.Cursor = Cursors.Default;
-                lbl.BackColor = listBackcolor;
-                lbl.ForeColor = Color.LightGray;
-                lbl.Font = new Font("Bender", 9, FontStyle.Regular);
-                lbl.Text = fetchedTraders[i];
-                lbl.Margin = new Padding(10, 1, 1, 1);
-                lbl.MouseEnter += new EventHandler(activequest_MouseEnter);
-                lbl.MouseLeave += new EventHandler(activequest_MouseLeave);
-                lbl.MouseDown += new MouseEventHandler(activequest_MouseDown);
-                lbl.MouseUp += new MouseEventHandler(activequest_MouseUp);
-                panelQuests.Controls.Add(lbl);
+
+                if (fetchedTraders[i] != null)
+                {
+                    if (fetchedTraders[i].ToLower().Contains("developer mode"))
+                    {
+                        lbl.Name = $"QuestItem{i}";
+                        lbl.Cursor = Cursors.Hand;
+                    }
+                    else
+                    {
+                        lbl.Name = $"TraderItem{i}";
+                        lbl.Cursor = Cursors.Default;
+                    }
+
+                    lbl.AutoSize = false;
+                    lbl.Anchor = (AnchorStyles.Left | AnchorStyles.Top);
+                    lbl.TextAlign = ContentAlignment.MiddleLeft;
+                    lbl.Size = new Size(175, profilesPlaceholder.Size.Height);
+                    lbl.Location = new Point(0, profilesPlaceholder.Location.X + (i * profilesPlaceholder.Size.Height));
+                    lbl.BackColor = listBackcolor;
+                    lbl.ForeColor = Color.LightGray;
+                    lbl.Font = new Font("Bender", 9, FontStyle.Regular);
+                    lbl.Text = fetchedTraders[i];
+                    lbl.Margin = new Padding(10, 1, 1, 1);
+                    lbl.MouseEnter += new EventHandler(activequest_MouseEnter);
+                    lbl.MouseLeave += new EventHandler(activequest_MouseLeave);
+                    lbl.MouseDown += new MouseEventHandler(activequest_MouseDown);
+                    lbl.MouseUp += new MouseEventHandler(activequest_MouseUp);
+                    panelQuests.Controls.Add(lbl);
+                }
             }
         }
 
@@ -489,6 +576,10 @@ namespace Quests
                     {
                         startFetching();
                     }
+                    else if (label.Text.ToLower().Contains("developer mode"))
+                    {
+                        switchDevMode();
+                    }
                     else
                     {
                         if (Control.ModifierKeys != Keys.Control)
@@ -521,6 +612,9 @@ namespace Quests
             fetchedTraders = new string[0];
 
             arrInsert("⬅️ Back to profiles");
+            arrInsert(null);
+
+            arr2Insert("◻️ Developer Mode");
             arr2Insert(null);
 
             string profileName = "";
@@ -639,13 +733,13 @@ namespace Quests
                     JArray AFF = (JArray)conditions["AvailableForFinish"];
                     foreach (JObject requiredItem in (JArray)AFF)
                     {
-                        string type = (string)requiredItem["_parent"];
+                        string type = (string)requiredItem["conditionType"];
 
                         if (type.ToLower() == "finditem")
                         {
-                            JObject _props = (JObject)requiredItem["_props"];
-                            string taskValue = (string)_props["value"];
-                            JArray taskTargets = (JArray)_props["target"];
+                            // JObject _props = (JObject)requiredItem["_props"];
+                            string taskValue = (string)requiredItem["value"];
+                            JArray taskTargets = (JArray)requiredItem["target"];
 
                             foreach (string target in (JArray)taskTargets)
                             {
@@ -656,9 +750,8 @@ namespace Quests
 
                         if (type.ToLower() == "handoveritem")
                         {
-                            JObject _props = (JObject)requiredItem["_props"];
-                            string taskValue = (string)_props["value"];
-                            JArray taskTargets = (JArray)_props["target"];
+                            string taskValue = (string)requiredItem["value"];
+                            JArray taskTargets = (JArray)requiredItem["target"];
 
                             foreach (string target in (JArray)taskTargets)
                             {
@@ -670,9 +763,9 @@ namespace Quests
                         if (type.ToLower() == "leaveitematlocation")
                         {
                             JObject _props = (JObject)requiredItem["_props"];
-                            string taskValue = (string)_props["value"];
-                            JArray taskTargets = (JArray)_props["target"];
-                            string taskPlantTime = (string)_props["plantTime"];
+                            string taskValue = (string)requiredItem["value"];
+                            JArray taskTargets = (JArray)requiredItem["target"];
+                            string taskPlantTime = (string)requiredItem["plantTime"];
 
                             foreach (string target in (JArray)taskTargets)
                             {
@@ -683,10 +776,9 @@ namespace Quests
 
                         if (type.ToLower() == "placebeacon")
                         {
-                            JObject _props = (JObject)requiredItem["_props"];
-                            string taskValue = (string)_props["value"];
-                            JArray taskTargets = (JArray)_props["target"];
-                            string taskPlantTime = (string)_props["plantTime"];
+                            string taskValue = (string)requiredItem["value"];
+                            JArray taskTargets = (JArray)requiredItem["target"];
+                            string taskPlantTime = (string)requiredItem["plantTime"];
 
                             foreach (string target in (JArray)taskTargets)
                             {
@@ -697,14 +789,12 @@ namespace Quests
 
                         if (type.ToLower() == "skill")
                         {
-                            JObject _props = (JObject)requiredItem["_props"];
-                            string taskValue = (string)_props["value"];
-
-                            JToken taskTarget = (JToken)_props["target"];
+                            string taskValue = (string)requiredItem["value"];
+                            JToken taskTarget = (JToken)requiredItem["target"];
 
                             if (taskTarget.Type == JTokenType.Array)
                             {
-                                JArray taskTargets = (JArray)_props["target"];
+                                JArray taskTargets = (JArray)requiredItem["target"];
                                 foreach (string target in (JArray)taskTargets)
                                 {
                                     string foundObject = (string)locale[$"{target} Name"];
@@ -713,16 +803,15 @@ namespace Quests
                             }
                             else
                             {
-                                string taskTargets = (string)_props["target"];
+                                string taskTargets = (string)requiredItem["target"];
                                 questObjectives.Add($"{questTranslator[type]} {taskTargets} (reach lv. {taskValue})");
                             }
                         }
 
                         if (type.ToLower() == "traderloyalty")
                         {
-                            JObject _props = (JObject)requiredItem["_props"];
-                            string taskValue = (string)_props["value"];
-                            string target = (string)_props["target"];
+                            string taskValue = (string)requiredItem["value"];
+                            string target = (string)requiredItem["target"];
                             questObjectives.Add($"{questTranslator[type]}{taskValue} with {traders[target]}");
                         }
 
