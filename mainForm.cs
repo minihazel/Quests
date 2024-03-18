@@ -702,6 +702,7 @@ namespace Quests
         private void readQuestDetails(string fetchQuest, Control originalLbl)
         {
             List<string> questObjectives = new List<string>();
+            List<string> questSubObjectives = new List<string>();
             string questsTemplate = File.ReadAllText(Path.Combine(currentEnv, "Aki_Data\\Server\\database\\templates\\quests.json"));
             JObject template = JObject.Parse(questsTemplate);
 
@@ -714,6 +715,7 @@ namespace Quests
 
             string searchQuestID = "";
             string searchQuestName = "";
+            bool isExitStatus = false;
 
             foreach (var questItem in template.Properties())
             {
@@ -817,15 +819,37 @@ namespace Quests
 
                         if (type.ToLower() == "countercreator")
                         {
+                            JObject cc_counter = (JObject)requiredItem["counter"];
+                            JArray cc_conditions = (JArray)cc_counter["conditions"];
+                            if (cc_counter != null && cc_conditions != null)
+                            {
+                                foreach (JObject subObj in (JArray)cc_conditions)
+                                {
+                                    string str_conditionType = (string)subObj["conditionType"];
+                                    switch (str_conditionType.ToLower())
+                                    {
+                                        case "visitplace":
+                                            break;
+                                        case "exitstatus":
+                                            isExitStatus = true;
+                                            questSubObjectives.Add("Survive and extract from the location");
+                                            break;
+                                    }
+                                }
+
+                                if (isExitStatus)
+                                {
+                                    JObject locationObj = cc_conditions.OfType<JObject>().FirstOrDefault(obj => obj.ContainsKey("conditionType"));
+                                    if (locationObj != null)
+                                    {
+                                        string loc = (string)locationObj["conditionType"];
+                                    }
+                                }
+                            }
+
                             string foundObject = (string)locale[$"{searchQuestID} description"];
-                            questObjectives.Add($"Incompatible objective (CounterCreator)");
-                            questObjectives.Add(null);
                             questObjectives.Add(foundObject);
                             break;
-                            // JObject _props = (JObject)requiredItem["_props"];
-                            // string taskValue = (string)_props["value"];
-                            // string target = (string)_props["target"];
-                            // questObjectives.Add($"{questTranslator[type]}{taskValue} with {traders[target]}");
                         }
                     }
 
