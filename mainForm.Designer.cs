@@ -96,7 +96,9 @@
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Quests";
             Load += mainForm_Load;
+            LocationChanged += mainForm_LocationChanged;
             KeyDown += mainForm_KeyDown;
+            Resize += mainForm_Resize;
             panelProfiles.ResumeLayout(false);
             ResumeLayout(false);
         }

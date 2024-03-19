@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
@@ -23,6 +24,9 @@ namespace Quests
 
         public Dictionary<string, string> traders = new Dictionary<string, string>();
         private Dictionary<string, string> questTranslator = new Dictionary<string, string>();
+
+        public bool? isDescLoaded = false;
+        private Form descForm;
 
         public mainForm()
         {
@@ -64,7 +68,7 @@ namespace Quests
             bool userFolderExists = File.Exists(userFolder);
             bool profilesFolderExists = File.Exists(profilesFolder);
 
-            if (akiServerExists && akiLauncherExists && EFTExists && userFolderExists &&  profilesFolderExists)
+            if (akiServerExists && akiLauncherExists && EFTExists && userFolderExists && profilesFolderExists)
             {
                 return true;
             }
@@ -168,6 +172,7 @@ namespace Quests
 
                 string AID = label.Tag.ToString();
                 fetchQuests(AID);
+                displayQuestWindow();
             }
         }
 
@@ -309,6 +314,37 @@ namespace Quests
                     }
                 }
             }
+        }
+
+        private void displayQuestWindow()
+        {
+            descForm = new Form();
+            descForm.Text = "Quest information";
+            descForm.Size = new Size(this.Size.Width * 2 / 3, this.Size.Height);
+            descForm.Font = new Font("Bender", 10, FontStyle.Regular);
+            descForm.BackColor = listBackcolor;
+            descForm.ForeColor = Color.LightGray;
+            descForm.ControlBox = false;
+            descForm.MinimumSize = new Size(300, this.Size.Height);
+            descForm.Resize += questDesc_Resize;
+
+            Label questLbl = new Label();
+            questLbl.Name = $"questLbl";
+            questLbl.AutoSize = false;
+            questLbl.Anchor = (AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom);
+            questLbl.TextAlign = ContentAlignment.MiddleLeft;
+            questLbl.Size = new Size(descForm.Size.Width, descForm.Size.Height);
+            questLbl.Location = new Point(0, 0);
+            questLbl.TextAlign = ContentAlignment.TopLeft;
+            questLbl.Font = new Font("Bender", 13, FontStyle.Regular);
+            questLbl.BackColor = descForm.BackColor;
+            questLbl.ForeColor = Color.LightGray;
+            questLbl.Padding = new Padding(10, 10, 10, 10);
+            questLbl.Cursor = Cursors.Hand;
+
+            descForm.Show();
+            descForm.Controls.Add(questLbl);
+            UpdateSecondFormPosition();
         }
 
         private Control returnQuest()
@@ -817,8 +853,9 @@ namespace Quests
                             questObjectives.Add($"{questTranslator[type]}{taskValue} with {traders[target]}");
                         }
 
-                        if (type.ToLower() == "countercreator")
+                        if (type.ToLower() == "countercreator" || type.ToLower() == "weaponassembly")
                         {
+                            /*
                             JObject cc_counter = (JObject)requiredItem["counter"];
                             JArray cc_conditions = (JArray)cc_counter["conditions"];
                             if (cc_counter != null && cc_conditions != null)
@@ -846,6 +883,7 @@ namespace Quests
                                     }
                                 }
                             }
+                            */
 
                             string foundObject = (string)locale[$"{searchQuestID} description"];
                             questObjectives.Add(foundObject);
@@ -859,6 +897,11 @@ namespace Quests
 
             string compiled = string.Join(Environment.NewLine, questObjectives);
             lblQuestInfo.Text = compiled;
+            Control questLbl = descForm.Controls.Find("questLbl", false).FirstOrDefault();
+            if (questLbl != null)
+            {
+                questLbl.Text = compiled;
+            }
         }
 
         private void mainForm_KeyDown(object sender, KeyEventArgs e)
@@ -870,6 +913,41 @@ namespace Quests
                 {
                     string fetchQuest = questLabel.Text;
                     selectQuestAsComplete(fetchQuest);
+                }
+            }
+        }
+
+        private void UpdateSecondFormPosition()
+        {
+            if (descForm != null)
+            {
+                descForm.Location = new Point(this.Right - 15, this.Top);
+            }
+        }
+
+        private void mainForm_LocationChanged(object sender, EventArgs e)
+        {
+            UpdateSecondFormPosition();
+        }
+
+        private void mainForm_Resize(object sender, EventArgs e)
+        {
+            if (this.WindowState == FormWindowState.Normal)
+            {
+                if (descForm != null)
+                {
+                    descForm.WindowState = FormWindowState.Normal;
+                }
+            }
+        }
+
+        private void questDesc_Resize(object sender, EventArgs e)
+        {
+            if (descForm != null)
+            {
+                if (descForm.WindowState == FormWindowState.Normal)
+                {
+                    this.WindowState = FormWindowState.Normal;
                 }
             }
         }
