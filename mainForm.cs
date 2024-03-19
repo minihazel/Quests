@@ -88,7 +88,13 @@ namespace Quests
 
                 panelQuests.Controls.Clear();
                 panelProfiles.BringToFront();
-                lblQuestInfo.Text = null;
+
+                if (descForm != null)
+                {
+                    Control questLbl = descForm.Controls.Find("questLbl", false).FirstOrDefault();
+                    if (questLbl != null)
+                        questLbl.Text = null;
+                }
 
                 listProfiles();
                 Text = $"Quests (active installation: {currentEnv})";
@@ -896,7 +902,6 @@ namespace Quests
             }
 
             string compiled = string.Join(Environment.NewLine, questObjectives);
-            lblQuestInfo.Text = compiled;
             Control questLbl = descForm.Controls.Find("questLbl", false).FirstOrDefault();
             if (questLbl != null)
             {

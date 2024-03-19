@@ -32,7 +32,6 @@
             panelQuests = new Panel();
             panelProfiles = new Panel();
             profilesPlaceholder = new Label();
-            lblQuestInfo = new Label();
             panelProfiles.SuspendLayout();
             SuspendLayout();
             // 
@@ -52,7 +51,7 @@
             panelProfiles.Controls.Add(profilesPlaceholder);
             panelProfiles.Location = new Point(0, 0);
             panelProfiles.Name = "panelProfiles";
-            panelProfiles.Size = new Size(584, 503);
+            panelProfiles.Size = new Size(584, 677);
             panelProfiles.TabIndex = 1;
             // 
             // profilesPlaceholder
@@ -68,24 +67,12 @@
             profilesPlaceholder.TextAlign = ContentAlignment.MiddleLeft;
             profilesPlaceholder.Visible = false;
             // 
-            // lblQuestInfo
-            // 
-            lblQuestInfo.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            lblQuestInfo.BorderStyle = BorderStyle.FixedSingle;
-            lblQuestInfo.Font = new Font("Bender", 10F);
-            lblQuestInfo.Location = new Point(-1, 506);
-            lblQuestInfo.Name = "lblQuestInfo";
-            lblQuestInfo.Padding = new Padding(10);
-            lblQuestInfo.Size = new Size(586, 172);
-            lblQuestInfo.TabIndex = 2;
-            // 
             // mainForm
             // 
             AutoScaleDimensions = new SizeF(9F, 18F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(26, 28, 30);
             ClientSize = new Size(584, 677);
-            Controls.Add(lblQuestInfo);
             Controls.Add(panelProfiles);
             Controls.Add(panelQuests);
             Font = new Font("Bender", 12F, FontStyle.Bold);
@@ -108,6 +95,5 @@
         private Panel panelQuests;
         private Panel panelProfiles;
         private Label profilesPlaceholder;
-        private Label lblQuestInfo;
     }
 }
