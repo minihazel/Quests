@@ -41,7 +41,7 @@
             panelQuests.AutoScroll = true;
             panelQuests.Location = new Point(0, 0);
             panelQuests.Name = "panelQuests";
-            panelQuests.Size = new Size(584, 503);
+            panelQuests.Size = new Size(519, 425);
             panelQuests.TabIndex = 0;
             // 
             // panelProfiles
@@ -51,7 +51,7 @@
             panelProfiles.Controls.Add(profilesPlaceholder);
             panelProfiles.Location = new Point(0, 0);
             panelProfiles.Name = "panelProfiles";
-            panelProfiles.Size = new Size(584, 677);
+            panelProfiles.Size = new Size(519, 599);
             panelProfiles.TabIndex = 1;
             // 
             // profilesPlaceholder
@@ -61,7 +61,7 @@
             profilesPlaceholder.Location = new Point(0, 1);
             profilesPlaceholder.Name = "profilesPlaceholder";
             profilesPlaceholder.Padding = new Padding(10, 0, 0, 0);
-            profilesPlaceholder.Size = new Size(580, 45);
+            profilesPlaceholder.Size = new Size(515, 45);
             profilesPlaceholder.TabIndex = 0;
             profilesPlaceholder.Text = "✔️ Profile placeholder";
             profilesPlaceholder.TextAlign = ContentAlignment.MiddleLeft;
@@ -72,7 +72,7 @@
             AutoScaleDimensions = new SizeF(9F, 18F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(26, 28, 30);
-            ClientSize = new Size(584, 677);
+            ClientSize = new Size(519, 599);
             Controls.Add(panelProfiles);
             Controls.Add(panelQuests);
             Font = new Font("Bender", 12F, FontStyle.Bold);

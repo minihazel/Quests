@@ -26,6 +26,7 @@ namespace Quests
         private Dictionary<string, string> questTranslator = new Dictionary<string, string>();
 
         public bool? isDescLoaded = false;
+        public bool? isDevMode = false;
         private Form descForm;
 
         public mainForm()
@@ -91,9 +92,7 @@ namespace Quests
 
                 if (descForm != null)
                 {
-                    Control questLbl = descForm.Controls.Find("questLbl", false).FirstOrDefault();
-                    if (questLbl != null)
-                        questLbl.Text = null;
+                    descForm.Close();
                 }
 
                 listProfiles();
@@ -118,11 +117,13 @@ namespace Quests
                     if (lbl.Text.ToLower() == "◻️ developer mode" && lbl.Name == name)
                     {
                         lbl.Text = "◼️ Developer Mode";
+                        isDevMode = true;
                         break;
                     }
                     else if (lbl.Text.ToLower() == "◼️ developer mode" && lbl.Name == name)
                     {
                         lbl.Text = "◻️ Developer Mode";
+                        isDevMode = false;
                         break;
                     }
                 }
@@ -324,10 +325,15 @@ namespace Quests
 
         private void displayQuestWindow()
         {
+            if (descForm != null)
+            {
+                descForm.Close();
+            }
+
             descForm = new Form();
             descForm.Text = "Quest information";
             descForm.Size = new Size(this.Size.Width * 2 / 3, this.Size.Height);
-            descForm.Font = new Font("Bender", 10, FontStyle.Regular);
+            descForm.Font = new Font("Bender", 9, FontStyle.Regular);
             descForm.BackColor = listBackcolor;
             descForm.ForeColor = Color.LightGray;
             descForm.ControlBox = false;
@@ -342,7 +348,7 @@ namespace Quests
             questLbl.Size = new Size(descForm.Size.Width, descForm.Size.Height);
             questLbl.Location = new Point(0, 0);
             questLbl.TextAlign = ContentAlignment.TopLeft;
-            questLbl.Font = new Font("Bender", 13, FontStyle.Regular);
+            questLbl.Font = new Font("Bender", 11, FontStyle.Regular);
             questLbl.BackColor = descForm.BackColor;
             questLbl.ForeColor = Color.LightGray;
             questLbl.Padding = new Padding(10, 10, 10, 10);
@@ -400,7 +406,7 @@ namespace Quests
                 lbl.Location = new Point(175, profilesPlaceholder.Location.X + (i * profilesPlaceholder.Size.Height));
                 lbl.BackColor = listBackcolor;
                 lbl.ForeColor = Color.LightGray;
-                lbl.Font = new Font("Bender", 13, FontStyle.Regular);
+                lbl.Font = new Font("Bender", 11, FontStyle.Regular);
                 lbl.Text = fetchedQuests[i];
                 lbl.Margin = new Padding(10, 1, 1, 1);
                 if (fetchedQuests != null)
