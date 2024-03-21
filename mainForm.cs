@@ -26,7 +26,7 @@ namespace Quests
         private Dictionary<string, string> questTranslator = new Dictionary<string, string>();
 
         public bool? isDescLoaded = false;
-        public bool? isDevMode = false;
+        public bool isDevMode = false;
         private Form descForm;
 
         public mainForm()
@@ -336,23 +336,27 @@ namespace Quests
             descForm.Font = new Font("Bender", 9, FontStyle.Regular);
             descForm.BackColor = listBackcolor;
             descForm.ForeColor = Color.LightGray;
-            descForm.ControlBox = false;
+            descForm.ControlBox = true;
+            descForm.MinimizeBox = false;
+            descForm.MaximizeBox = false;
             descForm.MinimumSize = new Size(300, this.Size.Height);
             descForm.Resize += questDesc_Resize;
 
-            Label questLbl = new Label();
+            TextBox questLbl = new TextBox();
             questLbl.Name = $"questLbl";
             questLbl.AutoSize = false;
             questLbl.Anchor = (AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom);
-            questLbl.TextAlign = ContentAlignment.MiddleLeft;
+            questLbl.BorderStyle = BorderStyle.FixedSingle;
             questLbl.Size = new Size(descForm.Size.Width, descForm.Size.Height);
             questLbl.Location = new Point(0, 0);
-            questLbl.TextAlign = ContentAlignment.TopLeft;
             questLbl.Font = new Font("Bender", 11, FontStyle.Regular);
             questLbl.BackColor = descForm.BackColor;
             questLbl.ForeColor = Color.LightGray;
             questLbl.Padding = new Padding(10, 10, 10, 10);
-            questLbl.Cursor = Cursors.Hand;
+            questLbl.Cursor = Cursors.IBeam;
+            questLbl.ScrollBars = ScrollBars.Vertical;
+            questLbl.WordWrap = true;
+            questLbl.Multiline = true;
 
             descForm.Show();
             descForm.Controls.Add(questLbl);
@@ -635,6 +639,11 @@ namespace Quests
                             clearAll();
                         }
 
+                        if (descForm != null)
+                        {
+                            displayQuestWindow();
+                        }
+
                         label.BackColor = listHovercolor;
                         label.ForeColor = Color.DodgerBlue;
                         readQuestDetails(label.Text, label);
@@ -749,6 +758,7 @@ namespace Quests
 
         private void readQuestDetails(string fetchQuest, Control originalLbl)
         {
+            string devModeCompiled = null;
             List<string> questObjectives = new List<string>();
             List<string> questSubObjectives = new List<string>();
             string questsTemplate = File.ReadAllText(Path.Combine(currentEnv, "Aki_Data\\Server\\database\\templates\\quests.json"));
@@ -781,125 +791,132 @@ namespace Quests
 
                     JObject conditions = (JObject)item["conditions"];
                     JArray AFF = (JArray)conditions["AvailableForFinish"];
-                    foreach (JObject requiredItem in (JArray)AFF)
+                    if (isDevMode)
                     {
-                        string type = (string)requiredItem["conditionType"];
-
-                        if (type.ToLower() == "finditem")
+                        devModeCompiled = AFF.ToString();
+                    }
+                    else
+                    {
+                        foreach (JObject requiredItem in (JArray)AFF)
                         {
-                            // JObject _props = (JObject)requiredItem["_props"];
-                            string taskValue = (string)requiredItem["value"];
-                            JArray taskTargets = (JArray)requiredItem["target"];
+                            string type = (string)requiredItem["conditionType"];
 
-                            foreach (string target in (JArray)taskTargets)
+                            if (type.ToLower() == "finditem")
                             {
-                                string foundObject = (string)locale[$"{target} Name"];
-                                questObjectives.Add($"{questTranslator[type]} {foundObject} ({taskValue})");
-                            }
-                        }
-
-                        if (type.ToLower() == "handoveritem")
-                        {
-                            string taskValue = (string)requiredItem["value"];
-                            JArray taskTargets = (JArray)requiredItem["target"];
-
-                            foreach (string target in (JArray)taskTargets)
-                            {
-                                string foundObject = (string)locale[$"{target} Name"];
-                                questObjectives.Add($"{questTranslator[type]} {foundObject} ({taskValue})");
-                            }
-                        }
-
-                        if (type.ToLower() == "leaveitematlocation")
-                        {
-                            JObject _props = (JObject)requiredItem["_props"];
-                            string taskValue = (string)requiredItem["value"];
-                            JArray taskTargets = (JArray)requiredItem["target"];
-                            string taskPlantTime = (string)requiredItem["plantTime"];
-
-                            foreach (string target in (JArray)taskTargets)
-                            {
-                                string foundObject = (string)locale[$"{target} Name"];
-                                questObjectives.Add($"{questTranslator[type]} {foundObject} ({taskValue}) [{taskPlantTime} sec]");
-                            }
-                        }
-
-                        if (type.ToLower() == "placebeacon")
-                        {
-                            string taskValue = (string)requiredItem["value"];
-                            JArray taskTargets = (JArray)requiredItem["target"];
-                            string taskPlantTime = (string)requiredItem["plantTime"];
-
-                            foreach (string target in (JArray)taskTargets)
-                            {
-                                string foundObject = (string)locale[$"{target} Name"];
-                                questObjectives.Add($"{questTranslator[type]} {foundObject} ({taskValue}) [{taskPlantTime} sec]");
-                            }
-                        }
-
-                        if (type.ToLower() == "skill")
-                        {
-                            string taskValue = (string)requiredItem["value"];
-                            JToken taskTarget = (JToken)requiredItem["target"];
-
-                            if (taskTarget.Type == JTokenType.Array)
-                            {
+                                // JObject _props = (JObject)requiredItem["_props"];
+                                string taskValue = (string)requiredItem["value"];
                                 JArray taskTargets = (JArray)requiredItem["target"];
+
                                 foreach (string target in (JArray)taskTargets)
                                 {
                                     string foundObject = (string)locale[$"{target} Name"];
-                                    questObjectives.Add($"{questTranslator[type]} {foundObject} (reach lv. {taskValue})");
+                                    questObjectives.Add($"{questTranslator[type]} {foundObject} ({taskValue})");
                                 }
                             }
-                            else
-                            {
-                                string taskTargets = (string)requiredItem["target"];
-                                questObjectives.Add($"{questTranslator[type]} {taskTargets} (reach lv. {taskValue})");
-                            }
-                        }
 
-                        if (type.ToLower() == "traderloyalty")
-                        {
-                            string taskValue = (string)requiredItem["value"];
-                            string target = (string)requiredItem["target"];
-                            questObjectives.Add($"{questTranslator[type]}{taskValue} with {traders[target]}");
-                        }
-
-                        if (type.ToLower() == "countercreator" || type.ToLower() == "weaponassembly")
-                        {
-                            /*
-                            JObject cc_counter = (JObject)requiredItem["counter"];
-                            JArray cc_conditions = (JArray)cc_counter["conditions"];
-                            if (cc_counter != null && cc_conditions != null)
+                            if (type.ToLower() == "handoveritem")
                             {
-                                foreach (JObject subObj in (JArray)cc_conditions)
+                                string taskValue = (string)requiredItem["value"];
+                                JArray taskTargets = (JArray)requiredItem["target"];
+
+                                foreach (string target in (JArray)taskTargets)
                                 {
-                                    string str_conditionType = (string)subObj["conditionType"];
-                                    switch (str_conditionType.ToLower())
+                                    string foundObject = (string)locale[$"{target} Name"];
+                                    questObjectives.Add($"{questTranslator[type]} {foundObject} ({taskValue})");
+                                }
+                            }
+
+                            if (type.ToLower() == "leaveitematlocation")
+                            {
+                                JObject _props = (JObject)requiredItem["_props"];
+                                string taskValue = (string)requiredItem["value"];
+                                JArray taskTargets = (JArray)requiredItem["target"];
+                                string taskPlantTime = (string)requiredItem["plantTime"];
+
+                                foreach (string target in (JArray)taskTargets)
+                                {
+                                    string foundObject = (string)locale[$"{target} Name"];
+                                    questObjectives.Add($"{questTranslator[type]} {foundObject} ({taskValue}) [{taskPlantTime} sec]");
+                                }
+                            }
+
+                            if (type.ToLower() == "placebeacon")
+                            {
+                                string taskValue = (string)requiredItem["value"];
+                                JArray taskTargets = (JArray)requiredItem["target"];
+                                string taskPlantTime = (string)requiredItem["plantTime"];
+
+                                foreach (string target in (JArray)taskTargets)
+                                {
+                                    string foundObject = (string)locale[$"{target} Name"];
+                                    questObjectives.Add($"{questTranslator[type]} {foundObject} ({taskValue}) [{taskPlantTime} sec]");
+                                }
+                            }
+
+                            if (type.ToLower() == "skill")
+                            {
+                                string taskValue = (string)requiredItem["value"];
+                                JToken taskTarget = (JToken)requiredItem["target"];
+
+                                if (taskTarget.Type == JTokenType.Array)
+                                {
+                                    JArray taskTargets = (JArray)requiredItem["target"];
+                                    foreach (string target in (JArray)taskTargets)
                                     {
-                                        case "visitplace":
-                                            break;
-                                        case "exitstatus":
-                                            isExitStatus = true;
-                                            questSubObjectives.Add("Survive and extract from the location");
-                                            break;
+                                        string foundObject = (string)locale[$"{target} Name"];
+                                        questObjectives.Add($"{questTranslator[type]} {foundObject} (reach lv. {taskValue})");
                                     }
                                 }
-
-                                if (isExitStatus)
+                                else
                                 {
-                                    JObject locationObj = cc_conditions.OfType<JObject>().FirstOrDefault(obj => obj.ContainsKey("conditionType"));
-                                    if (locationObj != null)
-                                    {
-                                        string loc = (string)locationObj["conditionType"];
-                                    }
+                                    string taskTargets = (string)requiredItem["target"];
+                                    questObjectives.Add($"{questTranslator[type]} {taskTargets} (reach lv. {taskValue})");
                                 }
                             }
-                            */
 
-                            string foundObject = (string)locale[$"{searchQuestID} description"];
-                            questObjectives.Add(foundObject);
-                            break;
+                            if (type.ToLower() == "traderloyalty")
+                            {
+                                string taskValue = (string)requiredItem["value"];
+                                string target = (string)requiredItem["target"];
+                                questObjectives.Add($"{questTranslator[type]}{taskValue} with {traders[target]}");
+                            }
+
+                            if (type.ToLower() == "countercreator" || type.ToLower() == "weaponassembly")
+                            {
+                                /*
+                                JObject cc_counter = (JObject)requiredItem["counter"];
+                                JArray cc_conditions = (JArray)cc_counter["conditions"];
+                                if (cc_counter != null && cc_conditions != null)
+                                {
+                                    foreach (JObject subObj in (JArray)cc_conditions)
+                                    {
+                                        string str_conditionType = (string)subObj["conditionType"];
+                                        switch (str_conditionType.ToLower())
+                                        {
+                                            case "visitplace":
+                                                break;
+                                            case "exitstatus":
+                                                isExitStatus = true;
+                                                questSubObjectives.Add("Survive and extract from the location");
+                                                break;
+                                        }
+                                    }
+
+                                    if (isExitStatus)
+                                    {
+                                        JObject locationObj = cc_conditions.OfType<JObject>().FirstOrDefault(obj => obj.ContainsKey("conditionType"));
+                                        if (locationObj != null)
+                                        {
+                                            string loc = (string)locationObj["conditionType"];
+                                        }
+                                    }
+                                }
+                                */
+
+                                string foundObject = (string)locale[$"{searchQuestID} description"];
+                                questObjectives.Add(foundObject);
+                                break;
+                            }
                         }
                     }
 
@@ -907,11 +924,22 @@ namespace Quests
                 }
             }
 
-            string compiled = string.Join(Environment.NewLine, questObjectives);
-            Control questLbl = descForm.Controls.Find("questLbl", false).FirstOrDefault();
-            if (questLbl != null)
+            if (isDevMode)
             {
-                questLbl.Text = compiled;
+                Control questLbl = descForm.Controls.Find("questLbl", false).FirstOrDefault();
+                if (questLbl != null)
+                {
+                    questLbl.Text = devModeCompiled;
+                }
+            }
+            else
+            {
+                string compiled = string.Join(Environment.NewLine, questObjectives);
+                Control questLbl = descForm.Controls.Find("questLbl", false).FirstOrDefault();
+                if (questLbl != null)
+                {
+                    questLbl.Text = compiled;
+                }
             }
         }
 
