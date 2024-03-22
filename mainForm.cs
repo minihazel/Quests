@@ -328,6 +328,7 @@ namespace Quests
             if (descForm != null)
             {
                 descForm.Close();
+                descForm.Dispose();
             }
 
             descForm = new Form();
