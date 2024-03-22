@@ -100,7 +100,7 @@ namespace Quests
             }
         }
 
-        private void switchDevMode()
+        private void switchDevMode(Control pastLbl)
         {
             string name = null;
 
@@ -126,6 +126,8 @@ namespace Quests
                         isDevMode = false;
                         break;
                     }
+
+                    readQuestDetails(pastLbl.Text, pastLbl);
                 }
             }
         }
@@ -632,7 +634,12 @@ namespace Quests
                     }
                     else if (label.Text.ToLower().Contains("developer mode"))
                     {
-                        switchDevMode();
+                        switchDevMode(label);
+
+                        if (descForm != null)
+                        {
+                            displayQuestWindow();
+                        }
                     }
                     else
                     {
@@ -791,13 +798,12 @@ namespace Quests
                 {
                     searchQuestID = questID;
                     searchQuestName = questName;
-                    // questObjectives.Add(questName);
                     questObjectives.Add("");
 
                     JObject conditions = (JObject)item["conditions"];
                     JArray AFF = (JArray)conditions["AvailableForFinish"];
                     if (isDevMode)
-                        devModeCompiled = AFF.ToString();
+                        devModeCompiled = item.ToString();
                     else
                     {
                         foreach (JObject requiredItem in (JArray)AFF)
