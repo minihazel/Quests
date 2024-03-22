@@ -360,6 +360,7 @@ namespace Quests
 
             descForm.Show();
             descForm.Controls.Add(questLbl);
+
             UpdateSecondFormPosition();
         }
 
@@ -988,6 +989,14 @@ namespace Quests
                 {
                     this.WindowState = FormWindowState.Normal;
                 }
+            }
+        }
+
+        private void questDesc_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                //
             }
         }
     }
