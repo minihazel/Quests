@@ -333,7 +333,7 @@ namespace Quests
 
             descForm = new Form();
             descForm.Text = "Quest information";
-            descForm.Size = new Size(this.Size.Width * 2 / 3, this.Size.Height);
+            descForm.Size = new Size(this.Size.Width * 2 / 3 + 100, this.Size.Height);
             descForm.Font = new Font("Bender", 9, FontStyle.Regular);
             descForm.BackColor = listBackcolor;
             descForm.ForeColor = Color.LightGray;
@@ -773,8 +773,9 @@ namespace Quests
             JObject profile = JObject.Parse(fullProfileRead);
             int activeQuests = 0;
 
-            string searchQuestID = "";
-            string searchQuestName = "";
+            string searchQuestID = null;
+            string searchQuestName = null;
+            string searchQuestTraderId = null;
             bool isExitStatus = false;
 
             foreach (var questItem in template.Properties())
@@ -783,24 +784,51 @@ namespace Quests
                 string questName = (string)item["QuestName"]?.Value<string>();
                 string traderId = (string)item["traderId"]?.Value<string>();
                 string questID = (string)item["_id"]?.Value<string>();
+                searchQuestName = questName;
+                searchQuestTraderId = traderId;
 
                 if (questName == fetchQuest)
                 {
                     searchQuestID = questID;
                     searchQuestName = questName;
-                    questObjectives.Add(questName);
+                    // questObjectives.Add(questName);
                     questObjectives.Add("");
 
                     JObject conditions = (JObject)item["conditions"];
                     JArray AFF = (JArray)conditions["AvailableForFinish"];
                     if (isDevMode)
-                    {
                         devModeCompiled = AFF.ToString();
-                    }
                     else
                     {
                         foreach (JObject requiredItem in (JArray)AFF)
                         {
+                            string conditionType = (string)requiredItem["conditionType"];
+                            string objectiveId = (string)requiredItem["id"];
+                            int objectiveValue = (int)requiredItem["value"];
+                            string foundObject = (string)locale[objectiveId];
+
+                            if (conditionType.ToLower() == "finditem" ||
+                                conditionType.ToLower() == "handoveritem")
+                            {
+                                if (objectiveValue < 2)
+                                {
+                                    questObjectives.Add(foundObject);
+                                }
+                                else
+                                {
+                                    string total = $"{foundObject} ({objectiveValue.ToString()})";
+                                    questObjectives.Add(total);
+                                }
+                            }
+                            else
+                                questObjectives.Add(foundObject);
+                        }
+
+                        /*
+                        foreach (JObject requiredItem in (JArray)AFF)
+                        {
+                            string objectiveId = (string)requiredItem["id"];
+                            Debug.WriteLine(objectiveId);
                             string type = (string)requiredItem["conditionType"];
 
                             if (type.ToLower() == "finditem")
@@ -913,13 +941,14 @@ namespace Quests
                                         }
                                     }
                                 }
-                                */
+                                
 
                                 string foundObject = (string)locale[$"{searchQuestID} description"];
                                 questObjectives.Add(foundObject);
                                 break;
                             }
                         }
+                        */
                     }
 
                     break;
@@ -931,12 +960,16 @@ namespace Quests
                 Control questLbl = descForm.Controls.Find("questLbl", false).FirstOrDefault();
                 if (questLbl != null)
                 {
-                    questLbl.Text = devModeCompiled;
+                    string prefix = searchQuestName + Environment.NewLine + Environment.NewLine +
+                                    $"Trader: {traders[searchQuestTraderId]}" + Environment.NewLine;
+                    questLbl.Text = prefix + Environment.NewLine + devModeCompiled;
                 }
             }
             else
             {
-                string compiled = string.Join(Environment.NewLine, questObjectives);
+                string prefix = searchQuestName + Environment.NewLine + Environment.NewLine +
+                                   $"Trader: {traders[searchQuestTraderId]}" + Environment.NewLine;
+                string compiled = prefix + string.Join(Environment.NewLine, questObjectives);
                 Control questLbl = descForm.Controls.Find("questLbl", false).FirstOrDefault();
                 if (questLbl != null)
                 {
