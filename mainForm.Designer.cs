@@ -83,6 +83,7 @@
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Quests";
             Load += mainForm_Load;
+            Shown += mainForm_Shown;
             LocationChanged += mainForm_LocationChanged;
             KeyDown += mainForm_KeyDown;
             Resize += mainForm_Resize;

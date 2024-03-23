@@ -2,8 +2,15 @@
 using Newtonsoft.Json.Linq;
 using System.ComponentModel.Design;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
+using System.Windows.Forms;
+using static System.Net.Mime.MediaTypeNames;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
+using Font = System.Drawing.Font;
 
 namespace Quests
 {
@@ -15,6 +22,8 @@ namespace Quests
 
         public string? profilePath = null;
         public string? currentProfile = null;
+        public string? selectedSubTask = null;
+        public string? selectedSubTaskValue = null;
         public string[] fetchedQuests;
         public string[] fetchedTraders;
 
@@ -28,6 +37,7 @@ namespace Quests
         public bool? isDescLoaded = false;
         public bool isDevMode = false;
         private Form descForm;
+        private messageWindow msgBoard;
 
         public mainForm()
         {
@@ -129,6 +139,82 @@ namespace Quests
 
                     readQuestDetails(pastLbl.Text, pastLbl);
                 }
+            }
+        }
+
+        private void insertItem(RichTextBox origin, string item, string valueType, bool isDigit)
+        {
+            Font font = new Font("Bender", 15, FontStyle.Bold);
+            Font otherFont = new Font("Bender", 11, FontStyle.Bold);
+
+            if (valueType != null)
+            {
+                switch (valueType.ToLower())
+                {
+                    case "min":
+                        if (isDigit)
+                            origin.SelectionFont = font;
+                        origin.SelectionColor = Color.IndianRed;
+                        origin.AppendText(item + Environment.NewLine);
+                        origin.SelectionColor = origin.ForeColor;
+                        if (isDigit)
+                            origin.SelectionFont = otherFont;
+                        break;
+                    case "between":
+                        if (isDigit)
+                            origin.SelectionFont = font;
+                        origin.SelectionColor = Color.DodgerBlue;
+                        origin.AppendText(item + Environment.NewLine);
+                        origin.SelectionColor = origin.ForeColor;
+                        if (isDigit)
+                            origin.SelectionFont = otherFont;
+                        break;
+                    case "threshold":
+                        if (isDigit)
+                            origin.SelectionFont = font;
+                        origin.SelectionColor = Color.MediumSpringGreen;
+                        origin.AppendText(item + Environment.NewLine);
+                        origin.SelectionColor = origin.ForeColor;
+                        if (isDigit)
+                            origin.SelectionFont = otherFont;
+                        break;
+                }
+            }
+            else
+            {
+                origin.SelectionColor = origin.ForeColor;
+                origin.AppendText(item + Environment.NewLine);
+                origin.SelectionColor = origin.ForeColor;
+            }
+        }
+
+        private void setLineFont(RichTextBox rtb, int lineIndex, int fontSize, bool questInfo)
+        {
+            if (questInfo)
+            {
+                int lineStartIndex = rtb.GetFirstCharIndexFromLine(lineIndex);
+                int lineEndIndex = rtb.GetFirstCharIndexFromLine(lineIndex + 1);
+                if (lineEndIndex == -1)
+                {
+                    lineEndIndex = rtb.TextLength;
+                }
+
+                rtb.Select(lineStartIndex, lineEndIndex - lineStartIndex);
+                rtb.SelectionFont = new Font("Bender", fontSize, FontStyle.Bold); ;
+                rtb.Select(0, 0);
+            }
+            else
+            {
+                int lineStartIndex = rtb.GetFirstCharIndexFromLine(lineIndex);
+                int lineEndIndex = rtb.GetFirstCharIndexFromLine(lineIndex + 1);
+                if (lineEndIndex == -1)
+                {
+                    lineEndIndex = rtb.TextLength;
+                }
+
+                rtb.Select(lineStartIndex, lineEndIndex - lineStartIndex);
+                rtb.SelectionFont = new Font("Bender", fontSize, FontStyle.Bold); ;
+                rtb.Select(0, 0);
             }
         }
 
@@ -327,6 +413,8 @@ namespace Quests
 
         private void displayQuestWindow()
         {
+            int innerMargin = 15;
+
             if (descForm != null)
             {
                 descForm.Close();
@@ -345,21 +433,21 @@ namespace Quests
             descForm.MinimumSize = new Size(300, this.Size.Height);
             descForm.Resize += questDesc_Resize;
 
-            TextBox questLbl = new TextBox();
+            RichTextBox questLbl = new RichTextBox();
             questLbl.Name = $"questLbl";
             questLbl.AutoSize = false;
             questLbl.Anchor = (AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom);
-            questLbl.BorderStyle = BorderStyle.FixedSingle;
-            questLbl.Size = new Size(descForm.Size.Width, descForm.Size.Height);
-            questLbl.Location = new Point(0, 0);
-            questLbl.Font = new Font("Bender", 11, FontStyle.Regular);
+            questLbl.BorderStyle = BorderStyle.None;
+            questLbl.Size = new Size(descForm.Size.Width - innerMargin, descForm.Size.Height - 50);
+            questLbl.Location = new Point(innerMargin, innerMargin);
+            questLbl.Font = new Font("Bender", 11, FontStyle.Bold);
             questLbl.BackColor = descForm.BackColor;
             questLbl.ForeColor = Color.LightGray;
-            questLbl.Padding = new Padding(10, 10, 10, 10);
             questLbl.Cursor = Cursors.IBeam;
-            questLbl.ScrollBars = ScrollBars.Vertical;
             questLbl.WordWrap = true;
             questLbl.Multiline = true;
+            questLbl.MouseWheel += questDesc_MouseWheel;
+            questLbl.MouseDown += questDesc_MouseDown;
 
             descForm.Show();
             descForm.Controls.Add(questLbl);
@@ -414,7 +502,7 @@ namespace Quests
                 lbl.Location = new Point(175, profilesPlaceholder.Location.X + (i * profilesPlaceholder.Size.Height));
                 lbl.BackColor = listBackcolor;
                 lbl.ForeColor = Color.LightGray;
-                lbl.Font = new Font("Bender", 11, FontStyle.Regular);
+                lbl.Font = new Font("Bender", 13, FontStyle.Regular);
                 lbl.Text = fetchedQuests[i];
                 lbl.Margin = new Padding(10, 1, 1, 1);
                 if (fetchedQuests != null)
@@ -653,6 +741,9 @@ namespace Quests
                             displayQuestWindow();
                         }
 
+                        selectedSubTask = null;
+                        selectedSubTaskValue = null;
+
                         label.BackColor = listHovercolor;
                         label.ForeColor = Color.DodgerBlue;
                         readQuestDetails(label.Text, label);
@@ -779,191 +870,104 @@ namespace Quests
             string fullProfileRead = File.ReadAllText(profilePath);
             JObject profile = JObject.Parse(fullProfileRead);
             int activeQuests = 0;
+            RichTextBox questLbl = descForm.Controls.Find("questLbl", false).FirstOrDefault() as RichTextBox;
 
             string searchQuestID = null;
             string searchQuestName = null;
             string searchQuestTraderId = null;
             bool isExitStatus = false;
 
-            foreach (var questItem in template.Properties())
+
+            if (questLbl != null)
             {
-                JObject item = (JObject)questItem.Value;
-                string questName = (string)item["QuestName"]?.Value<string>();
-                string traderId = (string)item["traderId"]?.Value<string>();
-                string questID = (string)item["_id"]?.Value<string>();
-                searchQuestName = questName;
-                searchQuestTraderId = traderId;
-
-                if (questName == fetchQuest)
+                foreach (var questItem in template.Properties())
                 {
-                    searchQuestID = questID;
+                    JObject item = (JObject)questItem.Value;
+                    string questName = (string)item["QuestName"]?.Value<string>();
+                    string traderId = (string)item["traderId"]?.Value<string>();
+                    string questID = (string)item["_id"]?.Value<string>();
                     searchQuestName = questName;
-                    questObjectives.Add("");
+                    searchQuestTraderId = traderId;
 
-                    JObject conditions = (JObject)item["conditions"];
-                    JArray AFF = (JArray)conditions["AvailableForFinish"];
-                    if (isDevMode)
-                        devModeCompiled = item.ToString();
-                    else
+                    if (questName == fetchQuest)
                     {
-                        foreach (JObject requiredItem in (JArray)AFF)
-                        {
-                            string conditionType = (string)requiredItem["conditionType"];
-                            string objectiveId = (string)requiredItem["id"];
-                            int objectiveValue = (int)requiredItem["value"];
-                            string foundObject = (string)locale[objectiveId];
+                        searchQuestID = questID;
+                        searchQuestName = questName;
+                        questObjectives.Add("");
 
-                            if (conditionType.ToLower() == "finditem" ||
-                                conditionType.ToLower() == "handoveritem")
+                        insertItem(questLbl, searchQuestName, null, false);
+                        insertItem(questLbl, traders[searchQuestTraderId], null, false);
+                        insertItem(questLbl, null, null, false);
+
+                        JObject conditions = (JObject)item["conditions"];
+                        JArray AFF = (JArray)conditions["AvailableForFinish"];
+
+                        if (isDevMode)
+                        {
+                            devModeCompiled = item.ToString();
+                        }
+                        else
+                        {
+                            foreach (JObject requiredItem in (JArray)AFF)
                             {
-                                if (objectiveValue < 2)
+                                string conditionType = (string)requiredItem["conditionType"];
+                                string objectiveId = (string)requiredItem["id"];
+                                int objectiveValue = (int)requiredItem["value"];
+                                string foundObject = (string)locale[objectiveId];
+
+                                //string total = $"{foundObject} ({objectiveValue.ToString()})";
+
+                                string profileContent = File.ReadAllText(profilePath);
+                                JObject profileObj = JObject.Parse(profileContent);
+                                JObject characters = (JObject)profileObj["characters"];
+                                JObject pmc = (JObject)characters["pmc"];
+                                JObject TaskConditionCounters = (JObject)pmc["TaskConditionCounters"];
+
+                                var results = TaskConditionCounters.Properties()
+                                    .Where(p => p.Value["id"] != null && (string)p.Value["id"] == objectiveId);
+
+                                foreach (var result in results)
                                 {
-                                    questObjectives.Add(foundObject);
-                                }
-                                else
-                                {
-                                    string total = $"{foundObject} ({objectiveValue.ToString()})";
-                                    questObjectives.Add(total);
+                                    JObject resultParent = (JObject)result.Value;
+                                    string id = (string)resultParent["id"];
+                                    int val = (int)resultParent["value"];
+                                    string questString = (string)locale[id];
+
+                                    int minValue = 0;
+                                    int maxValue = objectiveValue;
+
+                                    if (val == 0)
+                                    {
+                                        insertItem(questLbl, foundObject, "min", false);
+                                        insertItem(questLbl, $" {val.ToString()} / {objectiveValue.ToString()}", "min", true);
+                                        insertItem(questLbl, $"", null, false);
+                                    }
+                                    else if (val > minValue && val < maxValue)
+                                    {
+                                        insertItem(questLbl, foundObject, "between", false);
+                                        insertItem(questLbl, $" {val.ToString()} / {objectiveValue.ToString()}", "between", true);
+                                        insertItem(questLbl, $"", null, false);
+                                    }
+                                    else
+                                    {
+                                        insertItem(questLbl, foundObject, "threshold", false);
+                                        // insertItem(questLbl, $"{val.ToString()} / {objectiveValue.ToString()}", "threshold", true);
+                                        insertItem(questLbl, $" [ ✔️ ]", "threshold", true);
+                                        insertItem(questLbl, $"", null, false);
+                                    }
                                 }
                             }
-                            else
-                                questObjectives.Add(foundObject);
                         }
 
-                        /*
-                        foreach (JObject requiredItem in (JArray)AFF)
-                        {
-                            string objectiveId = (string)requiredItem["id"];
-                            Debug.WriteLine(objectiveId);
-                            string type = (string)requiredItem["conditionType"];
-
-                            if (type.ToLower() == "finditem")
-                            {
-                                // JObject _props = (JObject)requiredItem["_props"];
-                                string taskValue = (string)requiredItem["value"];
-                                JArray taskTargets = (JArray)requiredItem["target"];
-
-                                foreach (string target in (JArray)taskTargets)
-                                {
-                                    string foundObject = (string)locale[$"{target} Name"];
-                                    questObjectives.Add($"{questTranslator[type]} {foundObject} ({taskValue})");
-                                }
-                            }
-
-                            if (type.ToLower() == "handoveritem")
-                            {
-                                string taskValue = (string)requiredItem["value"];
-                                JArray taskTargets = (JArray)requiredItem["target"];
-
-                                foreach (string target in (JArray)taskTargets)
-                                {
-                                    string foundObject = (string)locale[$"{target} Name"];
-                                    questObjectives.Add($"{questTranslator[type]} {foundObject} ({taskValue})");
-                                }
-                            }
-
-                            if (type.ToLower() == "leaveitematlocation")
-                            {
-                                JObject _props = (JObject)requiredItem["_props"];
-                                string taskValue = (string)requiredItem["value"];
-                                JArray taskTargets = (JArray)requiredItem["target"];
-                                string taskPlantTime = (string)requiredItem["plantTime"];
-
-                                foreach (string target in (JArray)taskTargets)
-                                {
-                                    string foundObject = (string)locale[$"{target} Name"];
-                                    questObjectives.Add($"{questTranslator[type]} {foundObject} ({taskValue}) [{taskPlantTime} sec]");
-                                }
-                            }
-
-                            if (type.ToLower() == "placebeacon")
-                            {
-                                string taskValue = (string)requiredItem["value"];
-                                JArray taskTargets = (JArray)requiredItem["target"];
-                                string taskPlantTime = (string)requiredItem["plantTime"];
-
-                                foreach (string target in (JArray)taskTargets)
-                                {
-                                    string foundObject = (string)locale[$"{target} Name"];
-                                    questObjectives.Add($"{questTranslator[type]} {foundObject} ({taskValue}) [{taskPlantTime} sec]");
-                                }
-                            }
-
-                            if (type.ToLower() == "skill")
-                            {
-                                string taskValue = (string)requiredItem["value"];
-                                JToken taskTarget = (JToken)requiredItem["target"];
-
-                                if (taskTarget.Type == JTokenType.Array)
-                                {
-                                    JArray taskTargets = (JArray)requiredItem["target"];
-                                    foreach (string target in (JArray)taskTargets)
-                                    {
-                                        string foundObject = (string)locale[$"{target} Name"];
-                                        questObjectives.Add($"{questTranslator[type]} {foundObject} (reach lv. {taskValue})");
-                                    }
-                                }
-                                else
-                                {
-                                    string taskTargets = (string)requiredItem["target"];
-                                    questObjectives.Add($"{questTranslator[type]} {taskTargets} (reach lv. {taskValue})");
-                                }
-                            }
-
-                            if (type.ToLower() == "traderloyalty")
-                            {
-                                string taskValue = (string)requiredItem["value"];
-                                string target = (string)requiredItem["target"];
-                                questObjectives.Add($"{questTranslator[type]}{taskValue} with {traders[target]}");
-                            }
-
-                            if (type.ToLower() == "countercreator" || type.ToLower() == "weaponassembly")
-                            {
-                                /*
-                                JObject cc_counter = (JObject)requiredItem["counter"];
-                                JArray cc_conditions = (JArray)cc_counter["conditions"];
-                                if (cc_counter != null && cc_conditions != null)
-                                {
-                                    foreach (JObject subObj in (JArray)cc_conditions)
-                                    {
-                                        string str_conditionType = (string)subObj["conditionType"];
-                                        switch (str_conditionType.ToLower())
-                                        {
-                                            case "visitplace":
-                                                break;
-                                            case "exitstatus":
-                                                isExitStatus = true;
-                                                questSubObjectives.Add("Survive and extract from the location");
-                                                break;
-                                        }
-                                    }
-
-                                    if (isExitStatus)
-                                    {
-                                        JObject locationObj = cc_conditions.OfType<JObject>().FirstOrDefault(obj => obj.ContainsKey("conditionType"));
-                                        if (locationObj != null)
-                                        {
-                                            string loc = (string)locationObj["conditionType"];
-                                        }
-                                    }
-                                }
-                                
-
-                                string foundObject = (string)locale[$"{searchQuestID} description"];
-                                questObjectives.Add(foundObject);
-                                break;
-                            }
-                        }
-                        */
+                        setLineFont(questLbl, 0, 22, true);
+                        setLineFont(questLbl, 1, 15, true);
+                        break;
                     }
-
-                    break;
                 }
             }
 
             if (isDevMode)
             {
-                Control questLbl = descForm.Controls.Find("questLbl", false).FirstOrDefault();
                 if (questLbl != null)
                 {
                     string prefix = searchQuestName + Environment.NewLine + Environment.NewLine +
@@ -973,6 +977,7 @@ namespace Quests
             }
             else
             {
+                /*
                 string prefix = searchQuestName + Environment.NewLine + Environment.NewLine +
                                    $"Trader: {traders[searchQuestTraderId]}" + Environment.NewLine;
                 string compiled = prefix + string.Join(Environment.NewLine, questObjectives);
@@ -981,6 +986,7 @@ namespace Quests
                 {
                     questLbl.Text = compiled;
                 }
+                */
             }
         }
 
@@ -1021,6 +1027,38 @@ namespace Quests
             }
         }
 
+        private void questComplete_Click(object sender, EventArgs e)
+        {
+            System.Windows.Forms.Button btn = (System.Windows.Forms.Button)sender;
+            if (btn != null)
+            {
+                string content = $"Complete task? You will receive all rewards" + Environment.NewLine + Environment.NewLine +
+                                 $"{selectedSubTask}" + Environment.NewLine +
+                                 $"{selectedSubTaskValue}  ➞  [ ✔️ ]";
+
+                msgBoard = new messageWindow();
+                msgBoard.messageText.Text = content;
+
+                msgBoard.ShowDialog();
+            }
+        }
+
+        private void questSkip_Click(object sender, EventArgs e)
+        {
+            System.Windows.Forms.Button btn = (System.Windows.Forms.Button)sender;
+            if (btn != null)
+            {
+                string content = $"Skip task? You will receive no rewards" + Environment.NewLine + Environment.NewLine +
+                                 $"{selectedSubTask}" + Environment.NewLine +
+                                 $"{selectedSubTaskValue}  ➞  [ ➖ ]";
+
+                msgBoard = new messageWindow();
+                msgBoard.messageText.Text = content;
+
+                msgBoard.ShowDialog();
+            }
+        }
+
         private void questDesc_Resize(object sender, EventArgs e)
         {
             if (descForm != null)
@@ -1037,6 +1075,129 @@ namespace Quests
             if (e.KeyCode == Keys.Enter)
             {
                 //
+            }
+        }
+
+        private void questDesc_MouseWheel(object sender, MouseEventArgs e)
+        {
+            System.Windows.Forms.RichTextBox rtb = (System.Windows.Forms.RichTextBox)sender;
+
+            if (e.Delta > 0)
+            {
+                // down
+                if (rtb.Location.X > 30)
+                    return;
+                else
+                {
+                    rtb.Location = new Point(rtb.Location.X + 1, rtb.Location.Y + 1);
+                    rtb.Size = new Size(rtb.Size.Width - 1, rtb.Size.Height - 1);
+                }
+            }
+            else
+            {
+                // up
+                if (rtb.Location.X == 1)
+                    return;
+                else
+                {
+                    rtb.Location = new Point(rtb.Location.X - 1, rtb.Location.Y - 1);
+                    rtb.Size = new Size(rtb.Size.Width + 1, rtb.Size.Height + 1);
+                }
+            }
+        }
+
+        private void questDesc_MouseDown(object sender, MouseEventArgs e)
+        {
+            System.Windows.Forms.RichTextBox rtb = (System.Windows.Forms.RichTextBox)sender;
+            if (descForm != null)
+            {
+                int innerMargin = 15;
+                descForm.Text = "Quests";
+
+                Button questCompletor = panelProfiles.Controls.Find("questCompletor", false).FirstOrDefault() as Button;
+                Button questSkipper = panelProfiles.Controls.Find("questSkipper", false).FirstOrDefault() as Button;
+
+                if (questCompletor != null)
+                {
+                    panelProfiles.Controls.Remove(questCompletor);
+                    questCompletor.Dispose();
+                }
+
+                if (questSkipper != null)
+                {
+                    panelProfiles.Controls.Remove(questSkipper);
+                    questSkipper.Dispose();
+                }
+
+                int currentLineIndex = rtb.GetLineFromCharIndex(rtb.SelectionStart);
+                string currentLineText = rtb.Lines[currentLineIndex];
+
+                if (currentLineIndex >= 3)
+                {
+                    if (!string.IsNullOrEmpty(currentLineText))
+                    {
+                        // line has text
+                        if (char.IsLetter(currentLineText[0]))
+                        {
+                            descForm.Text = $"Quests | Double-click to finish task";
+
+                            Color caretColor = rtb.SelectionColor;
+                            if (caretColor != Color.MediumSpringGreen)
+                            {
+                                string counterLinetext = rtb.Lines[currentLineIndex + 1];
+                                selectedSubTask = currentLineText;
+                                selectedSubTaskValue = counterLinetext;
+
+                                questCompletor = new Button();
+                                questCompletor.Name = $"questCompletor";
+                                questCompletor.AutoSize = false;
+                                questCompletor.Cursor = Cursors.Hand;
+                                questCompletor.Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom);
+                                questCompletor.Location = new Point(innerMargin, panelProfiles.Size.Height - 60);
+                                questCompletor.FlatStyle = FlatStyle.Flat;
+                                questCompletor.FlatAppearance.BorderSize = 1;
+                                questCompletor.FlatAppearance.BorderColor = Color.FromArgb(255, 100, 100, 100);
+                                questCompletor.Size = new Size(150, 45);
+                                questCompletor.Font = new Font("Bender", 11, FontStyle.Bold);
+                                questCompletor.BackColor = descForm.BackColor;
+                                questCompletor.ForeColor = Color.LightGray;
+                                questCompletor.Text = "Complete task";
+
+                                questSkipper = new Button();
+                                questSkipper.Name = $"questSkipper";
+                                questSkipper.AutoSize = false;
+                                questSkipper.Cursor = Cursors.Hand;
+                                questSkipper.Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom);
+                                questSkipper.Location = new Point(questCompletor.Size.Width + innerMargin * 2, panelProfiles.Size.Height - 60);
+                                questSkipper.FlatStyle = FlatStyle.Flat;
+                                questSkipper.FlatAppearance.BorderSize = 1;
+                                questSkipper.FlatAppearance.BorderColor = Color.FromArgb(255, 100, 100, 100);
+                                questSkipper.Size = new Size(150, 45);
+                                questSkipper.Font = new Font("Bender", 11, FontStyle.Bold);
+                                questSkipper.BackColor = descForm.BackColor;
+                                questSkipper.ForeColor = Color.LightGray;
+                                questSkipper.Text = "Skip task";
+
+                                questCompletor.Click += questComplete_Click;
+                                questSkipper.Click += questSkip_Click;
+
+                                panelProfiles.Controls.Add(questCompletor);
+                                panelProfiles.Controls.Add(questSkipper);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void mainForm_Shown(object sender, EventArgs e)
+        {
+            if (descForm != null)
+            {
+                descForm.Show();
+
+                if (msgBoard != null)
+                    msgBoard.Show();
             }
         }
     }
