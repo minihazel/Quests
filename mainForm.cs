@@ -1139,8 +1139,6 @@ namespace Quests
                         // line has text
                         if (char.IsLetter(currentLineText[0]))
                         {
-                            descForm.Text = $"Quests | Double-click to finish task";
-
                             Color caretColor = rtb.SelectionColor;
                             if (caretColor != Color.MediumSpringGreen)
                             {
