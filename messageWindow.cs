@@ -21,6 +21,8 @@ namespace Quests
         [DllImportAttribute("user32.dll")]
         private static extern bool ReleaseCapture();
 
+        private mainForm mainForm;
+
         public messageWindow()
         {
             InitializeComponent();

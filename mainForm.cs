@@ -732,14 +732,13 @@ namespace Quests
                     else
                     {
                         if (Control.ModifierKeys != Keys.Control)
-                        {
                             clearAll();
-                        }
 
                         if (descForm != null)
-                        {
                             displayQuestWindow();
-                        }
+
+                        if (msgBoard != null)
+                            msgBoard.Close();
 
                         selectedSubTask = null;
                         selectedSubTaskValue = null;
@@ -1037,9 +1036,10 @@ namespace Quests
                                  $"{selectedSubTaskValue}  ➞  [ ✔️ ]";
 
                 msgBoard = new messageWindow();
+                msgBoard.TopMost = true;
                 msgBoard.messageText.Text = content;
 
-                msgBoard.ShowDialog();
+                msgBoard.Show();
             }
         }
 
@@ -1053,9 +1053,10 @@ namespace Quests
                                  $"{selectedSubTaskValue}  ➞  [ ➖ ]";
 
                 msgBoard = new messageWindow();
+                msgBoard.TopMost = true;
                 msgBoard.messageText.Text = content;
 
-                msgBoard.ShowDialog();
+                msgBoard.Show();
             }
         }
 
