@@ -31,7 +31,7 @@ namespace Quests
         public string[] fetchedTraders;
 
         public Color listBackcolor = Color.FromArgb(255, 26, 28, 30);
-        public Color listSelectedcolor = Color.FromArgb(255, 37, 37, 37);
+        public Color listSelectedcolor = Color.FromArgb(255, 36, 38, 40);
         public Color listHovercolor = Color.FromArgb(255, 31, 33, 35);
 
         public Dictionary<string, string> traders = new Dictionary<string, string>();
@@ -142,82 +142,6 @@ namespace Quests
 
                     readQuestDetails(pastLbl.Text, pastLbl);
                 }
-            }
-        }
-
-        private void insertItem(RichTextBox origin, string item, string valueType, bool isDigit)
-        {
-            Font font = new Font("Bender", 15, FontStyle.Bold);
-            Font otherFont = new Font("Bender", 11, FontStyle.Bold);
-
-            if (valueType != null)
-            {
-                switch (valueType.ToLower())
-                {
-                    case "min":
-                        if (isDigit)
-                            origin.SelectionFont = font;
-                        origin.SelectionColor = Color.IndianRed;
-                        origin.AppendText(item + Environment.NewLine);
-                        origin.SelectionColor = origin.ForeColor;
-                        if (isDigit)
-                            origin.SelectionFont = otherFont;
-                        break;
-                    case "between":
-                        if (isDigit)
-                            origin.SelectionFont = font;
-                        origin.SelectionColor = Color.DodgerBlue;
-                        origin.AppendText(item + Environment.NewLine);
-                        origin.SelectionColor = origin.ForeColor;
-                        if (isDigit)
-                            origin.SelectionFont = otherFont;
-                        break;
-                    case "threshold":
-                        if (isDigit)
-                            origin.SelectionFont = font;
-                        origin.SelectionColor = Color.MediumSpringGreen;
-                        origin.AppendText(item + Environment.NewLine);
-                        origin.SelectionColor = origin.ForeColor;
-                        if (isDigit)
-                            origin.SelectionFont = otherFont;
-                        break;
-                }
-            }
-            else
-            {
-                origin.SelectionColor = origin.ForeColor;
-                origin.AppendText(item + Environment.NewLine);
-                origin.SelectionColor = origin.ForeColor;
-            }
-        }
-
-        private void setLineFont(RichTextBox rtb, int lineIndex, int fontSize, bool questInfo)
-        {
-            if (questInfo)
-            {
-                int lineStartIndex = rtb.GetFirstCharIndexFromLine(lineIndex);
-                int lineEndIndex = rtb.GetFirstCharIndexFromLine(lineIndex + 1);
-                if (lineEndIndex == -1)
-                {
-                    lineEndIndex = rtb.TextLength;
-                }
-
-                rtb.Select(lineStartIndex, lineEndIndex - lineStartIndex);
-                rtb.SelectionFont = new Font("Bender", fontSize, FontStyle.Bold); ;
-                rtb.Select(0, 0);
-            }
-            else
-            {
-                int lineStartIndex = rtb.GetFirstCharIndexFromLine(lineIndex);
-                int lineEndIndex = rtb.GetFirstCharIndexFromLine(lineIndex + 1);
-                if (lineEndIndex == -1)
-                {
-                    lineEndIndex = rtb.TextLength;
-                }
-
-                rtb.Select(lineStartIndex, lineEndIndex - lineStartIndex);
-                rtb.SelectionFont = new Font("Bender", fontSize, FontStyle.Bold); ;
-                rtb.Select(0, 0);
             }
         }
 
@@ -883,7 +807,7 @@ namespace Quests
             bool isExitStatus = false;
 
 
-            if (/* questLbl */descForm != null)
+            if (descForm != null)
             {
                 foreach (var questItem in template.Properties())
                 {
@@ -1136,7 +1060,27 @@ namespace Quests
             if (lbl != null)
             {
                 if (Control.ModifierKeys == Keys.Control)
-                    lbl.BackColor = listSelectedcolor;
+                {
+                    if (lbl.Tag.ToString().StartsWith("quest_task_value"))
+                    {
+                        Match match = Regex.Match(lbl.Name, @"\d+");
+                        if (match.Success)
+                        {
+                            int number = int.Parse(match.Value);
+                            int newNum = number - 1;
+                            string newName = $"questTask{newNum}";
+
+                            Label label = descForm.Controls.Find(newName, false).FirstOrDefault() as Label;
+                            if (label != null)
+                            {
+                                lbl.BackColor = listBackcolor;
+                                label.BackColor = listSelectedcolor;
+                            }
+                        }
+                    }
+                    else
+                        lbl.BackColor = listSelectedcolor;
+                }
                 else
                 {
                     foreach (Control c in descForm.Controls)
@@ -1147,10 +1091,24 @@ namespace Quests
                         }
                     }
 
-                    if (!lbl.Name.ToLower().StartsWith("questtaskvalue"))
+                    if (lbl.Tag.ToString().StartsWith("quest_task_value"))
                     {
-                        lbl.BackColor = listSelectedcolor;
+                        Match match = Regex.Match(lbl.Name, @"\d+");
+                        if (match.Success)
+                        {
+                            int number = int.Parse(match.Value);
+                            int newNum = number - 1;
+                            string newName = $"questTask{newNum}";
+
+                            Label label = descForm.Controls.Find(newName, false).FirstOrDefault() as Label;
+                            if (label != null)
+                            {
+                                label.BackColor = listSelectedcolor;
+                            }
+                        }
                     }
+                    else
+                        lbl.BackColor = listSelectedcolor;
                 }
             }
         }
@@ -1162,7 +1120,7 @@ namespace Quests
             {
                 if (!lbl.Name.ToLower().StartsWith("questtrader") &&
                     !lbl.Name.ToLower().StartsWith("questname") &&
-                    !lbl.Name.ToLower().StartsWith("spacer"))
+                    lbl.Tag.ToString() != "spacer")
                 {
                     if (lbl.BackColor != listSelectedcolor)
                         lbl.BackColor = listHovercolor;
@@ -1177,7 +1135,7 @@ namespace Quests
             {
                 if (!lbl.Name.ToLower().StartsWith("questtrader") &&
                     !lbl.Name.ToLower().StartsWith("questname") &&
-                    !lbl.Name.ToLower().StartsWith("spacer"))
+                    lbl.Tag.ToString() != "spacer")
                 {
                     if (lbl.BackColor != listSelectedcolor)
                         lbl.BackColor = listBackcolor;
