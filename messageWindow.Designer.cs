@@ -36,7 +36,7 @@
             // messageText
             // 
             messageText.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            messageText.Font = new Font("Bender", 14F);
+            messageText.Font = new Font("Bender", 11F);
             messageText.Location = new Point(22, 21);
             messageText.Name = "messageText";
             messageText.Padding = new Padding(10);

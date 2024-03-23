@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing;
@@ -7,6 +9,7 @@ using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using static System.Net.Mime.MediaTypeNames;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
@@ -427,12 +430,11 @@ namespace Quests
             descForm.Font = new Font("Bender", 9, FontStyle.Regular);
             descForm.BackColor = listBackcolor;
             descForm.ForeColor = Color.LightGray;
-            descForm.ControlBox = true;
-            descForm.MinimizeBox = false;
-            descForm.MaximizeBox = false;
+            descForm.ControlBox = false;
             descForm.MinimumSize = new Size(300, this.Size.Height);
             descForm.Resize += questDesc_Resize;
 
+            /*
             RichTextBox questLbl = new RichTextBox();
             questLbl.Name = $"questLbl";
             questLbl.AutoSize = false;
@@ -448,9 +450,10 @@ namespace Quests
             questLbl.Multiline = true;
             questLbl.MouseWheel += questDesc_MouseWheel;
             questLbl.MouseDown += questDesc_MouseDown;
+            */
 
             descForm.Show();
-            descForm.Controls.Add(questLbl);
+            // descForm.Controls.Add(questLbl);
 
             UpdateSecondFormPosition();
         }
@@ -858,6 +861,9 @@ namespace Quests
         private void readQuestDetails(string fetchQuest, Control originalLbl)
         {
             string devModeCompiled = null;
+
+            List<KeyValuePair<string, string>> questItems = new List<KeyValuePair<string, string>>();
+
             List<string> questObjectives = new List<string>();
             List<string> questSubObjectives = new List<string>();
             string questsTemplate = File.ReadAllText(Path.Combine(currentEnv, "Aki_Data\\Server\\database\\templates\\quests.json"));
@@ -877,7 +883,7 @@ namespace Quests
             bool isExitStatus = false;
 
 
-            if (questLbl != null)
+            if (/* questLbl */descForm != null)
             {
                 foreach (var questItem in template.Properties())
                 {
@@ -894,9 +900,14 @@ namespace Quests
                         searchQuestName = questName;
                         questObjectives.Add("");
 
-                        insertItem(questLbl, searchQuestName, null, false);
-                        insertItem(questLbl, traders[searchQuestTraderId], null, false);
-                        insertItem(questLbl, null, null, false);
+                        // insertItem(questLbl, searchQuestName, null, false);
+                        questItems.Add(new KeyValuePair<string, string>(searchQuestName, "questname"));
+
+                        // insertItem(questLbl, traders[searchQuestTraderId], null, false);
+                        questItems.Add(new KeyValuePair<string, string>(traders[searchQuestTraderId], "tradername"));
+
+                        // insertItem(questLbl, null, null, false);
+                        questItems.Add(new KeyValuePair<string, string>("", "spacer"));
 
                         JObject conditions = (JObject)item["conditions"];
                         JArray AFF = (JArray)conditions["AvailableForFinish"];
@@ -937,35 +948,107 @@ namespace Quests
 
                                     if (val == 0)
                                     {
-                                        insertItem(questLbl, foundObject, "min", false);
-                                        insertItem(questLbl, $" {val.ToString()} / {objectiveValue.ToString()}", "min", true);
-                                        insertItem(questLbl, $"", null, false);
+                                        questItems.Add(new KeyValuePair<string, string>(foundObject, "quest_task_min"));
+                                        questItems.Add(new KeyValuePair<string, string>($" {val.ToString()} / {objectiveValue.ToString()}", "quest_task_value_min"));
                                     }
                                     else if (val > minValue && val < maxValue)
                                     {
-                                        insertItem(questLbl, foundObject, "between", false);
-                                        insertItem(questLbl, $" {val.ToString()} / {objectiveValue.ToString()}", "between", true);
-                                        insertItem(questLbl, $"", null, false);
+                                        questItems.Add(new KeyValuePair<string, string>(foundObject, "quest_task_between"));
+                                        questItems.Add(new KeyValuePair<string, string>($" {val.ToString()} / {objectiveValue.ToString()}", "quest_task_value_between"));
                                     }
                                     else
                                     {
-                                        insertItem(questLbl, foundObject, "threshold", false);
-                                        // insertItem(questLbl, $"{val.ToString()} / {objectiveValue.ToString()}", "threshold", true);
-                                        insertItem(questLbl, $" [ ✔️ ]", "threshold", true);
-                                        insertItem(questLbl, $"", null, false);
+                                        questItems.Add(new KeyValuePair<string, string>(foundObject, "quest_task_threshold"));
+                                        questItems.Add(new KeyValuePair<string, string>(" [ ✔️ ]", "quest_task_value_threshold"));
                                     }
                                 }
                             }
                         }
-
-                        setLineFont(questLbl, 0, 22, true);
-                        setLineFont(questLbl, 1, 15, true);
                         break;
                     }
                 }
             }
 
-            if (isDevMode)
+            if (!isDevMode)
+            {
+                if (descForm != null)
+                {
+                    int reduction = 0;
+
+                    for (var i = 0; i < questItems.Count; i++)
+                    {
+                        int innerMargin = 15;
+                        string item = questItems[i].Key;
+                        string category = questItems[i].Value;
+
+                        Label lbl = new Label();
+                        lbl.AutoSize = false;
+                        lbl.Anchor = (AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right);
+                        lbl.TextAlign = ContentAlignment.MiddleLeft;
+                        lbl.Margin = new Padding(innerMargin, 0, innerMargin, 0);
+                        lbl.Location = new Point(0, 2 + (i * 30));
+                        lbl.Size = new Size(descForm.Size.Width - 4, 30);
+                        lbl.MouseDown += questItem_MouseDown;
+                        lbl.MouseEnter += questItem_MouseEnter;
+                        lbl.MouseLeave += questItem_MouseLeave;
+                        lbl.Tag = category;
+
+                        if (category == "questname")
+                        {
+                            lbl.Name = $"questName{i}";
+                            lbl.Text = item;
+                            lbl.BackColor = listBackcolor;
+                            lbl.ForeColor = Color.LightGray;
+                            lbl.Font = new Font("Bender", 22, FontStyle.Bold);
+                            lbl.Cursor = Cursors.Default;
+                        }
+                        if (category == "tradername")
+                        {
+                            lbl.Name = $"questTrader{i}";
+                            lbl.Text = item;
+                            lbl.BackColor = listBackcolor;
+                            lbl.ForeColor = Color.LightGray;
+                            lbl.Font = new Font("Bender", 15, FontStyle.Bold);
+                            lbl.Cursor = Cursors.Default;
+                        }
+                        if (category.StartsWith("quest_task"))
+                        {
+                            lbl.Name = $"questTask{i}";
+                            lbl.Text = item;
+                            lbl.BackColor = listBackcolor;
+
+                            if (category.EndsWith("min"))
+                                lbl.ForeColor = Color.IndianRed;
+                            else if (category.EndsWith("between"))
+                                lbl.ForeColor = Color.DodgerBlue;
+                            else if (category.EndsWith("threshold"))
+                                lbl.ForeColor = Color.MediumSpringGreen;
+
+                            lbl.Font = new Font("Bender", 11, FontStyle.Bold);
+                            lbl.Cursor = Cursors.Hand;
+                        }
+                        if (category.StartsWith("quest_task_value"))
+                        {
+                            lbl.Name = $"questTaskValue{i}";
+                            lbl.Text = item;
+                            lbl.BackColor = listBackcolor;
+
+                            if (category.EndsWith("min"))
+                                lbl.ForeColor = Color.IndianRed;
+                            else if (category.EndsWith("between"))
+                                lbl.ForeColor = Color.DodgerBlue;
+                            else if (category.EndsWith("threshold"))
+                                lbl.ForeColor = Color.MediumSpringGreen;
+
+                            lbl.Font = new Font("Bender", 15, FontStyle.Bold);
+                            lbl.Cursor = Cursors.Hand;
+                        }
+
+                        descForm.Controls.Add(lbl);
+                    }
+                }
+            }
+            else
             {
                 if (questLbl != null)
                 {
@@ -973,19 +1056,6 @@ namespace Quests
                                     $"Trader: {traders[searchQuestTraderId]}" + Environment.NewLine;
                     questLbl.Text = prefix + Environment.NewLine + devModeCompiled;
                 }
-            }
-            else
-            {
-                /*
-                string prefix = searchQuestName + Environment.NewLine + Environment.NewLine +
-                                   $"Trader: {traders[searchQuestTraderId]}" + Environment.NewLine;
-                string compiled = prefix + string.Join(Environment.NewLine, questObjectives);
-                Control questLbl = descForm.Controls.Find("questLbl", false).FirstOrDefault();
-                if (questLbl != null)
-                {
-                    questLbl.Text = compiled;
-                }
-                */
             }
         }
 
@@ -1057,6 +1127,61 @@ namespace Quests
                 msgBoard.messageText.Text = content;
 
                 msgBoard.Show();
+            }
+        }
+
+        private void questItem_MouseDown(object sender, MouseEventArgs e)
+        {
+            System.Windows.Forms.Label lbl = (System.Windows.Forms.Label)sender;
+            if (lbl != null)
+            {
+                if (Control.ModifierKeys == Keys.Control)
+                    lbl.BackColor = listSelectedcolor;
+                else
+                {
+                    foreach (Control c in descForm.Controls)
+                    {
+                        if (c is Label label)
+                        {
+                            label.BackColor = listBackcolor;
+                        }
+                    }
+
+                    if (!lbl.Name.ToLower().StartsWith("questtaskvalue"))
+                    {
+                        lbl.BackColor = listSelectedcolor;
+                    }
+                }
+            }
+        }
+
+        private void questItem_MouseEnter(object sender, EventArgs e)
+        {
+            System.Windows.Forms.Label lbl = (System.Windows.Forms.Label)sender;
+            if (lbl != null)
+            {
+                if (!lbl.Name.ToLower().StartsWith("questtrader") &&
+                    !lbl.Name.ToLower().StartsWith("questname") &&
+                    !lbl.Name.ToLower().StartsWith("spacer"))
+                {
+                    if (lbl.BackColor != listSelectedcolor)
+                        lbl.BackColor = listHovercolor;
+                }
+            }
+        }
+
+        private void questItem_MouseLeave(object sender, EventArgs e)
+        {
+            System.Windows.Forms.Label lbl = (System.Windows.Forms.Label)sender;
+            if (lbl != null)
+            {
+                if (!lbl.Name.ToLower().StartsWith("questtrader") &&
+                    !lbl.Name.ToLower().StartsWith("questname") &&
+                    !lbl.Name.ToLower().StartsWith("spacer"))
+                {
+                    if (lbl.BackColor != listSelectedcolor)
+                        lbl.BackColor = listBackcolor;
+                }
             }
         }
 
