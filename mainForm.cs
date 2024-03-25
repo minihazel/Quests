@@ -661,8 +661,8 @@ namespace Quests
                         if (Control.ModifierKeys != Keys.Control)
                             clearAll();
 
-                        if (descForm != null)
-                            displayQuestWindow();
+                        // if (descForm != null)
+                            // displayQuestWindow();
 
                         if (msgBoard != null)
                             msgBoard.Close();
@@ -806,7 +806,6 @@ namespace Quests
             string searchQuestTraderId = null;
             bool isExitStatus = false;
 
-
             if (descForm != null)
             {
                 foreach (var questItem in template.Properties())
@@ -818,19 +817,21 @@ namespace Quests
                     searchQuestName = questName;
                     searchQuestTraderId = traderId;
 
+                    string profileContent = File.ReadAllText(profilePath);
+                    JObject profileObj = JObject.Parse(profileContent);
+                    JObject characters = (JObject)profileObj["characters"];
+                    JObject pmc = (JObject)characters["pmc"];
+                    JObject TaskConditionCounters = (JObject)pmc["TaskConditionCounters"];
+                    JArray Quests = (JArray)pmc["Quests"];
+
                     if (questName == fetchQuest)
                     {
                         searchQuestID = questID;
                         searchQuestName = questName;
                         questObjectives.Add("");
 
-                        // insertItem(questLbl, searchQuestName, null, false);
                         questItems.Add(new KeyValuePair<string, string>(searchQuestName, "questname"));
-
-                        // insertItem(questLbl, traders[searchQuestTraderId], null, false);
                         questItems.Add(new KeyValuePair<string, string>(traders[searchQuestTraderId], "tradername"));
-
-                        // insertItem(questLbl, null, null, false);
                         questItems.Add(new KeyValuePair<string, string>("", "spacer"));
 
                         JObject conditions = (JObject)item["conditions"];
@@ -849,41 +850,94 @@ namespace Quests
                                 int objectiveValue = (int)requiredItem["value"];
                                 string foundObject = (string)locale[objectiveId];
 
-                                //string total = $"{foundObject} ({objectiveValue.ToString()})";
-
-                                string profileContent = File.ReadAllText(profilePath);
-                                JObject profileObj = JObject.Parse(profileContent);
-                                JObject characters = (JObject)profileObj["characters"];
-                                JObject pmc = (JObject)characters["pmc"];
-                                JObject TaskConditionCounters = (JObject)pmc["TaskConditionCounters"];
-
-                                var results = TaskConditionCounters.Properties()
-                                    .Where(p => p.Value["id"] != null && (string)p.Value["id"] == objectiveId);
-
-                                foreach (var result in results)
+                                if (TaskConditionCounters.Count > 0)
                                 {
-                                    JObject resultParent = (JObject)result.Value;
-                                    string id = (string)resultParent["id"];
-                                    int val = (int)resultParent["value"];
-                                    string questString = (string)locale[id];
+                                    var questIdresults = TaskConditionCounters.Properties()
+                                    .Where(p => p.Value["sourceId"] != null && (string)p.Value["sourceId"] == questID);
 
-                                    int minValue = 0;
-                                    int maxValue = objectiveValue;
+                                    if (!questIdresults.Any())
+                                    {
+                                        string total = $"{foundObject} ({objectiveValue.ToString()})";
 
-                                    if (val == 0)
-                                    {
-                                        questItems.Add(new KeyValuePair<string, string>(foundObject, "quest_task_min"));
-                                        questItems.Add(new KeyValuePair<string, string>($" {val.ToString()} / {objectiveValue.ToString()}", "quest_task_value_min"));
-                                    }
-                                    else if (val > minValue && val < maxValue)
-                                    {
-                                        questItems.Add(new KeyValuePair<string, string>(foundObject, "quest_task_between"));
-                                        questItems.Add(new KeyValuePair<string, string>($" {val.ToString()} / {objectiveValue.ToString()}", "quest_task_value_between"));
+                                        foreach (JObject _questItem in (JArray)Quests)
+                                        {
+                                            string _questId = (string)_questItem["qid"];
+
+                                            if (_questId == searchQuestID)
+                                            {
+                                                questItems.Add(new KeyValuePair<string, string>(foundObject, "quest_task_min"));
+                                                int _questStatus = (int)_questItem["status"];
+
+                                                int val = 0;
+                                                int maxValue = objectiveValue;
+
+                                                switch (_questStatus)
+                                                {
+                                                    case 2:
+                                                        questItems.Add(new KeyValuePair<string, string>($" {val.ToString()} / {objectiveValue.ToString()}", "quest_task_value_min"));
+                                                        break;
+                                                    case 4:
+                                                        questItems.Add(new KeyValuePair<string, string>(" [ ✔️ ]", "quest_task_value_threshold"));
+                                                        break;
+                                                }
+                                            }
+                                        }
                                     }
                                     else
                                     {
-                                        questItems.Add(new KeyValuePair<string, string>(foundObject, "quest_task_threshold"));
-                                        questItems.Add(new KeyValuePair<string, string>(" [ ✔️ ]", "quest_task_value_threshold"));
+                                        var results = TaskConditionCounters.Properties()
+                                        .Where(p => p.Value["id"] != null && (string)p.Value["id"] == objectiveId);
+                                        
+                                        foreach (var result in results)
+                                        {
+                                            JObject resultParent = (JObject)result.Value;
+                                            string id = (string)resultParent["id"];
+                                            int val = (int)resultParent["value"];
+                                            string questString = (string)locale[id];
+
+                                            int minValue = 0;
+                                            int maxValue = objectiveValue;
+
+                                            if (val == 0)
+                                            {
+                                                questItems.Add(new KeyValuePair<string, string>(foundObject, "quest_task_min"));
+                                                questItems.Add(new KeyValuePair<string, string>($" {val.ToString()} / {objectiveValue.ToString()}", "quest_task_value_min"));
+                                            }
+                                            else if (val > minValue && val < maxValue)
+                                            {
+                                                questItems.Add(new KeyValuePair<string, string>(foundObject, "quest_task_between"));
+                                                questItems.Add(new KeyValuePair<string, string>($" {val.ToString()} / {objectiveValue.ToString()}", "quest_task_value_between"));
+                                            }
+                                            else
+                                            {
+                                                questItems.Add(new KeyValuePair<string, string>(foundObject, "quest_task_threshold"));
+                                                questItems.Add(new KeyValuePair<string, string>(" [ ✔️ ]", "quest_task_value_threshold"));
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    string total = $"{foundObject} ({objectiveValue.ToString()})";
+                                    foreach (JObject _questItem in (JArray)Quests)
+                                    {
+                                        string _questId = (string)_questItem["qid"];
+
+                                        if (_questId == searchQuestID)
+                                        {
+                                            questItems.Add(new KeyValuePair<string, string>(foundObject, "quest_task_min"));
+                                            int _questStatus = (int)_questItem["status"];
+
+                                            switch (_questStatus)
+                                            {
+                                                case 2:
+                                                    questItems.Add(new KeyValuePair<string, string>(" In-Progress", "quest_task_value_between"));
+                                                    break;
+                                                case 4:
+                                                    questItems.Add(new KeyValuePair<string, string>(" [ ✔️ ]", "quest_task_value_min"));
+                                                    break;
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -897,6 +951,8 @@ namespace Quests
             {
                 if (descForm != null)
                 {
+                    descForm.Controls.Clear();
+
                     int reduction = 0;
 
                     for (var i = 0; i < questItems.Count; i++)
@@ -965,7 +1021,7 @@ namespace Quests
                                 lbl.ForeColor = Color.MediumSpringGreen;
 
                             lbl.Font = new Font("Bender", 15, FontStyle.Bold);
-                            lbl.Cursor = Cursors.Hand;
+                            lbl.Cursor = Cursors.Default;
                         }
 
                         descForm.Controls.Add(lbl);
@@ -1103,6 +1159,7 @@ namespace Quests
                             Label label = descForm.Controls.Find(newName, false).FirstOrDefault() as Label;
                             if (label != null)
                             {
+                                lbl.BackColor = listBackcolor;
                                 label.BackColor = listSelectedcolor;
                             }
                         }
@@ -1120,6 +1177,7 @@ namespace Quests
             {
                 if (!lbl.Name.ToLower().StartsWith("questtrader") &&
                     !lbl.Name.ToLower().StartsWith("questname") &&
+                    !lbl.Name.ToLower().StartsWith("questtaskvalue") &&
                     lbl.Tag.ToString() != "spacer")
                 {
                     if (lbl.BackColor != listSelectedcolor)
@@ -1135,6 +1193,7 @@ namespace Quests
             {
                 if (!lbl.Name.ToLower().StartsWith("questtrader") &&
                     !lbl.Name.ToLower().StartsWith("questname") &&
+                    !lbl.Name.ToLower().StartsWith("questtaskvalue") &&
                     lbl.Tag.ToString() != "spacer")
                 {
                     if (lbl.BackColor != listSelectedcolor)
