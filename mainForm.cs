@@ -947,12 +947,20 @@ namespace Quests
                 }
             }
 
-            if (!isDevMode)
+            if (isDevMode)
+            {
+                if (questLbl != null)
+                {
+                    string prefix = searchQuestName + Environment.NewLine + Environment.NewLine +
+                                    $"Trader: {traders[searchQuestTraderId]}" + Environment.NewLine;
+                    questLbl.Text = prefix + Environment.NewLine + devModeCompiled;
+                }
+            }
+            else
             {
                 if (descForm != null)
                 {
                     descForm.Controls.Clear();
-
                     int reduction = 0;
 
                     for (var i = 0; i < questItems.Count; i++)
@@ -1026,15 +1034,6 @@ namespace Quests
 
                         descForm.Controls.Add(lbl);
                     }
-                }
-            }
-            else
-            {
-                if (questLbl != null)
-                {
-                    string prefix = searchQuestName + Environment.NewLine + Environment.NewLine +
-                                    $"Trader: {traders[searchQuestTraderId]}" + Environment.NewLine;
-                    questLbl.Text = prefix + Environment.NewLine + devModeCompiled;
                 }
             }
         }
